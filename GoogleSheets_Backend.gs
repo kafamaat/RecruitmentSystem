@@ -33,7 +33,8 @@
  *
  * PDF FILES:
  * - Uploaded CVs are stored TWO ways (fully automatic):
- *   1. Preferred: uploaded to a Google Drive folder "RMS CV Files"
+ *   1. Preferred: uploaded to your Google Drive folder (the folder
+ *      you linked, id: 1E4dpO5w8tlz8nLHPxCPzR35gkATixvFc)
  *      and a view link is stored in the sheet (cvDriveId /
  *      cvDriveUrl / cvDrivePreview). No base64 is written to the
  *      sheet in this case.
@@ -44,11 +45,9 @@
  *      These columns are auto-hidden so the sheet stays readable.
  *      The PDF is rebuilt automatically when records are loaded.
  * - Either way, the "cvDriveOpen" column shows a clickable link:
- *   "Open PDF" (Drive file) or "Review PDF" (built-in viewer served
- *   by this web app: ?action=viewpdf&id=<candidateId>). Clicking the
- *   link opens the PDF in the browser as an inline preview (iframe),
- *   with a "Download PDF" button for saving - no Drive authorization
- *   needed.
+ *   "Open PDF" (opens the file on Google Drive) or "Review PDF"
+ *   (built-in viewer served by this web app). Clicking "Open PDF"
+ *   opens Google Drive's preview of the uploaded file.
  * - After redeploying with this code, run once to fix existing rows:
  *   open the app and call   ?action=backfillopen   (or run
  *   backfillOpenLinks() in the editor).
@@ -83,6 +82,8 @@
 
 var SHEET_NAME = 'Recruitment';
 var CV_FOLDER_NAME = 'RMS CV Files';
+// Folder where uploaded CV PDFs are stored: https://drive.google.com/drive/folders/1E4dpO5w8tlz8nLHPxCPzR35gkATixvFc
+var CV_FOLDER_ID = '1E4dpO5w8tlz8nLHPxCPzR35gkATixvFc';
 
 // PDF stored directly in the sheet (fallback when Drive upload is not authorized).
 // A sheet cell can hold max 50,000 chars, so the base64 PDF is split into chunks,
@@ -152,6 +153,10 @@ function getSheet() {
 }
 
 function getCvFolder() {
+  // Prefer the specific folder the user linked (by ID), fall back to name search.
+  if (CV_FOLDER_ID) {
+    try { return DriveApp.getFolderById(CV_FOLDER_ID); } catch (err) {}
+  }
   var it = DriveApp.getFoldersByName(CV_FOLDER_NAME);
   if (it.hasNext()) return it.next();
   return DriveApp.createFolder(CV_FOLDER_NAME);
@@ -191,6 +196,7 @@ function doGet(e) {
     }
     if (e && e.parameter && e.parameter.action === 'drivecheck') {
       var report = {};
+      report.folderId = CV_FOLDER_ID;
       try { report.rootId = DriveApp.getRootFolder().getId(); } catch (err) { report.rootError = String(err); }
       try {
         var apiId = uploadPdfViaApi('rms-drive-check.txt', 'ok', 'text/plain');
@@ -198,9 +204,14 @@ function doGet(e) {
         try { DriveApp.getFileById(apiId).setTrashed(true); } catch (e2) {}
       } catch (err) { report.apiError = String(err); }
       try {
-        var it = DriveApp.getFoldersByName(CV_FOLDER_NAME);
-        report.folderSearch = it.hasNext() ? 'found' : 'none';
-      } catch (err) { report.folderError = String(err); }
+        var target = DriveApp.getFolderById(CV_FOLDER_ID);
+        report.folderOk = true;
+        report.folderName = target.getName();
+        report.folderUrl = 'https://drive.google.com/drive/folders/' + CV_FOLDER_ID;
+      } catch (err) { report.folderOk = false; report.folderError = String(err); }
+      report.hint = report.apiUpload && report.folderOk
+        ? 'Drive is fully authorized: PDFs will be uploaded to your linked folder and the sheet will show Drive preview links.'
+        : 'Drive scopes are NOT authorized on this deployment. Re-deploy the web app (Manage deployments -> Edit -> New version -> Deploy) and approve the "drive.file" + "script.external_request" scopes, OR uploads will keep falling back to base64-in-sheet.';
       return json(report);
     }
     if (e && e.parameter && e.parameter.action === 'viewpdf') {
@@ -436,7 +447,11 @@ function processPdf(data) {
 function uploadPdfViaApi(name, base64Data, mimeType) {
   var token = ScriptApp.getOAuthToken();
   var boundary = 'rms_' + Date.now();
-  var meta = JSON.stringify({ name: name, mimeType: mimeType || 'application/pdf' });
+  var meta = JSON.stringify({
+    name: name,
+    mimeType: mimeType || 'application/pdf',
+    parents: [CV_FOLDER_ID]
+  });
   var head = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + meta + '\r\n--' + boundary + '\r\nContent-Type: ' + (mimeType || 'application/pdf') + '\r\n\r\n';
   var tail = '\r\n--' + boundary + '--';
   var headBytes = Utilities.newBlob(head).getBytes();
