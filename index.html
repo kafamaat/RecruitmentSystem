@@ -515,13 +515,97 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            #khmer-calendar-container { height: 500px !important; }
+        /* Off-canvas sidebar backdrop (created on mobile only) */
+        #sidebar-backdrop {
+            display: none;
+        }
+        /* ---- Mobile Phone (≤ 767px) ---- */
+        @media (max-width: 767px) {
+            body.sidebar-open { overflow: hidden; }
+            #sidebar-backdrop {
+                position: fixed; inset: 0; top: 72px; z-index: 1035;
+                background: rgba(0,0,0,0.45);
+                -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+                display: none;
+            }
+            body.sidebar-open #sidebar-backdrop { display: block; }
+            #sidebar {
+                position: fixed !important; top: 72px; left: 0; bottom: 0; z-index: 1040;
+                width: 280px; max-width: 85vw; margin: 0 !important;
+                transform: translateX(-105%);
+                transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+                overflow-y: auto; display: block !important;
+                border-radius: 0 24px 24px 0;
+                box-shadow: var(--shadow-lg);
+            }
+            #sidebar.open { transform: translateX(0); }
+            .main-content {
+                width: 100% !important; max-width: 100% !important;
+                flex: 0 0 100% !important; padding: 16px 14px 28px !important;
+            }
+            .navbar-main .container-fluid { flex-wrap: nowrap; }
+            .navbar-brand { font-size: 0.9rem; min-width: 0; overflow: hidden; white-space: nowrap; }
+            .navbar-brand .brand-text { display: none; }
+            #live-clock { display: none !important; }
+            .navbar .glass-icon { width: 30px; height: 30px; font-size: 0.8rem; }
+            .navbar .btn { padding: 6px 12px; font-size: 0.8rem; }
+            /* Records page header stacks vertically + full width search */
+            #page-records > .d-flex.justify-content-between {
+                flex-direction: column; align-items: stretch !important; gap: 12px;
+            }
+            #page-records > .d-flex.justify-content-between .d-flex { flex-wrap: wrap; }
+            #page-records .input-group { width: 100% !important; }
+            /* Tables scroll horizontally on phones */
+            .table-responsive { -webkit-overflow-scrolling: touch; }
+            #records-table { min-width: 720px; }
+            #recent-table { min-width: 620px; }
+            /* Calendar fits by horizontal scroll */
+            #calendar-container { overflow-x: auto; }
+            .calendar-grid { min-width: 580px; }
+            .calendar-grid td { height: 84px; }
+            .weekly-day { min-width: 130px; }
+            #calendar-tabs { flex-wrap: nowrap; overflow-x: auto; }
+            #calendar-tabs .nav-link { white-space: nowrap; }
+            #calendar-controls { flex-direction: column; align-items: flex-start !important; }
+            /* Modals go nearly full-width */
+            .modal-dialog { margin: 10px auto !important; }
+            .modal-xl, .modal-lg { max-width: calc(100% - 16px) !important; }
+            #pdfReportPreviewModal .modal-dialog { max-width: 100% !important; margin: 0 !important; }
+            #pdfReportPreviewModal .modal-body { height: 72vh; }
             .stat-card .stat-number { font-size: 1.8rem; }
             .card-body { padding: 20px; }
             .stat-card { padding: 24px 20px; }
             .btn { padding: 10px 20px; }
             .modal-body { padding: 20px; }
+            #khmer-calendar-container { height: 500px !important; }
+            .glass-panel { padding: 20px; }
+            .modal-header { padding: 18px 20px; }
+            .modal-footer { padding: 16px 20px; }
+        }
+        /* ---- Tablet (768–1023 px) ---- */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .main-content { padding: 20px !important; }
+            #khmer-calendar-container { height: 560px !important; }
+            .calendar-grid td { height: 100px; }
+            #calendar-container { overflow-x: auto; }
+            #records-table { min-width: 720px; }
+            #recent-table { min-width: 620px; }
+            /* Keep the 25%/75% sidebar layout across the whole tablet range
+               (Bootstrap switches to col-lg at 992px, which we override). */
+            #sidebar { flex: 0 0 25% !important; max-width: 25% !important; width: 25% !important; }
+            .main-content { flex: 0 0 75% !important; max-width: 75% !important; width: 75% !important; }
+        }
+        /* ---- Desktop / Laptop (≥ 1024 px) ---- */
+        @media (min-width: 1024px) and (max-width: 1439px) {
+            .main-content { padding: 24px; }
+        }
+        /* ---- Large Desktop (≥ 1440 px) ---- */
+        @media (min-width: 1440px) {
+            .main-content { padding: 28px 32px; }
+            .card-body { padding: 32px; }
+            .stat-card { padding: 36px 32px; }
+            .stat-card .stat-number { font-size: 2.8rem; }
+            .stat-card .stat-icon { width: 68px; height: 68px; font-size: 1.7rem; }
         }
 
         /* ===== GLASS UTILITIES ===== */
@@ -795,7 +879,7 @@
                     </button>
                     <a class="navbar-brand d-flex align-items-center" href="#">
                         <span class="glass-icon glass-icon-sm me-2" style="width: 36px; height: 36px; font-size: 0.9rem; background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.15);"><i class="fas fa-users-gear"></i></span>
-                        <i class="fas fa-sparkles me-2" style="color:var(--gold);"></i>Recruitment Management System
+                        <i class="fas fa-sparkles me-2" style="color:var(--gold);"></i><span class="brand-text">Recruitment Management System</span>
                         <span class="ms-3 small fw-normal" id="live-clock" style="color:var(--text-muted); font-size: 0.8rem;"></span>
                         <span class="ms-3 badge" id="cloud-status-badge" style="display:none; font-size:0.7rem; background:var(--emerald); cursor:pointer;" onclick="pullFromFirebase()" title="Click to refresh from cloud">
                             <i class="fas fa-cloud me-1"></i><span id="cloud-status-text">Live</span>
@@ -819,6 +903,9 @@
 
         <div class="container-fluid">
             <div class="row">
+
+                <!-- Mobile sidebar backdrop -->
+                <div id="sidebar-backdrop" onclick="toggleSidebar()"></div>
 
                 <!-- SIDEBAR -->
                 <div id="sidebar" class="col-lg-2 col-md-3 sidebar p-3 d-md-block">
@@ -2069,6 +2156,10 @@ function logout() {
 }
 // ============= NAVIGATION =============
 function navigateTo(page) {
+  if (window.innerWidth < 768) {
+    document.body.classList.remove('sidebar-open');
+    document.getElementById('sidebar').classList.remove('open');
+  }
   document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('d-none'));
   document.querySelectorAll('[id^="menu-"]').forEach(m => m.classList.remove('active'));
   const pg = document.getElementById('page-'+page);
@@ -2081,7 +2172,11 @@ function navigateTo(page) {
   if (page==='documents') { loadDocuments(); renderDocuments(); updateDocumentStats(); }
 
 }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('d-md-block'); }
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('open');
+  document.body.classList.toggle('sidebar-open');
+}
 function toggleHideMenu(id) { const el = document.getElementById('menu-'+id); if (el) el.style.display='none'; }
 // ============= THEME MODE (Day/Night) =============
 let isNightMode = localStorage.getItem('rm_nightmode')==='true';
@@ -2091,11 +2186,13 @@ function toggleTheme() {
   if (isNightMode) applyNightMode(); else applyDayMode();
 }
 function applyNightMode() {
-  document.body.className = 'night-mode';
+  document.body.classList.remove('day-mode');
+  document.body.classList.add('night-mode');
   document.getElementById('theme-icon').className = 'fas fa-sun fa-lg';
 }
 function applyDayMode() {
-  document.body.className = 'day-mode';
+  document.body.classList.remove('night-mode');
+  document.body.classList.add('day-mode');
   document.getElementById('theme-icon').className = 'fas fa-moon fa-lg';
 }
 // ============= TOAST =============
@@ -2118,17 +2215,17 @@ function loadDashboard() {
   const rejected = candidates.filter(c => c.status==='Rejected').length;
   const shortlisted = candidates.filter(c => c.status==='Shortlisted').length;
   document.getElementById('dashboard-cards').innerHTML =
-    '<div class="col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(168,232,249,0.2), rgba(0,83,122,0.1)); border-color: rgba(168,232,249,0.2);"><i class="fas fa-users" style="color: #A8E8F9;"></i></div><div class="stat-number">'+total+'</div><div class="stat-label">Total Candidates</div></div></div>'+
-    '<div class="col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(40,167,69,0.15), rgba(32,201,151,0.1)); border-color: rgba(40,167,69,0.2);"><i class="fas fa-check-circle" style="color: #28a745;"></i></div><div class="stat-number">'+hired+'</div><div class="stat-label">Hired</div></div></div>'+
-    '<div class="col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(240,173,78,0.15), rgba(255,193,7,0.1)); border-color: rgba(240,173,78,0.2);"><i class="fas fa-clock" style="color: #f0ad4e;"></i></div><div class="stat-number">'+pending+'</div><div class="stat-label">Pending</div></div></div>'+
-    '<div class="col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(220,53,69,0.15), rgba(231,76,60,0.1)); border-color: rgba(220,53,69,0.2);"><i class="fas fa-times-circle" style="color: #dc3545;"></i></div><div class="stat-number">'+rejected+'</div><div class="stat-label">Rejected</div></div></div>';
+    '<div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(168,232,249,0.2), rgba(0,83,122,0.1)); border-color: rgba(168,232,249,0.2);"><i class="fas fa-users" style="color: #A8E8F9;"></i></div><div class="stat-number">'+total+'</div><div class="stat-label">Total Candidates</div></div></div>'+
+    '<div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(40,167,69,0.15), rgba(32,201,151,0.1)); border-color: rgba(40,167,69,0.2);"><i class="fas fa-check-circle" style="color: #28a745;"></i></div><div class="stat-number">'+hired+'</div><div class="stat-label">Hired</div></div></div>'+
+    '<div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(240,173,78,0.15), rgba(255,193,7,0.1)); border-color: rgba(240,173,78,0.2);"><i class="fas fa-clock" style="color: #f0ad4e;"></i></div><div class="stat-number">'+pending+'</div><div class="stat-label">Pending</div></div></div>'+
+    '<div class="col-6 col-md-3"><div class="stat-card"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(220,53,69,0.15), rgba(231,76,60,0.1)); border-color: rgba(220,53,69,0.2);"><i class="fas fa-times-circle" style="color: #dc3545;"></i></div><div class="stat-number">'+rejected+'</div><div class="stat-label">Rejected</div></div></div>';
   const today = new Date().toISOString().split('T')[0];
   const todayI = candidates.filter(c => c.interviewDate===today);
   const weekI = candidates.filter(c => c.interviewDate && c.interviewDate>=today);
   document.getElementById('interview-summary-cards').innerHTML =
-    '<div class="col-md-4"><div class="stat-card border-warning"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(240,173,78,0.15), rgba(255,193,7,0.1)); border-color: rgba(240,173,78,0.2);"><i class="fas fa-calendar-day" style="color: #f0ad4e;"></i></div><div class="stat-number">'+todayI.length+'</div><div class="stat-label">Today\'s Interviews</div></div></div>'+
-    '<div class="col-md-4"><div class="stat-card border-info"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(168,232,249,0.2), rgba(0,83,122,0.1)); border-color: rgba(168,232,249,0.2);"><i class="fas fa-calendar-week" style="color: #A8E8F9;"></i></div><div class="stat-number">'+weekI.length+'</div><div class="stat-label">Upcoming Interviews</div></div></div>'+
-    '<div class="col-md-4"><div class="stat-card border-success"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(40,167,69,0.15), rgba(32,201,151,0.1)); border-color: rgba(40,167,69,0.2);"><i class="fas fa-user-check" style="color: #28a745;"></i></div><div class="stat-number">'+shortlisted+'</div><div class="stat-label">Shortlisted</div></div></div>';
+    '<div class="col-6 col-md-4"><div class="stat-card border-warning"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(240,173,78,0.15), rgba(255,193,7,0.1)); border-color: rgba(240,173,78,0.2);"><i class="fas fa-calendar-day" style="color: #f0ad4e;"></i></div><div class="stat-number">'+todayI.length+'</div><div class="stat-label">Today\'s Interviews</div></div></div>'+
+    '<div class="col-6 col-md-4"><div class="stat-card border-info"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(168,232,249,0.2), rgba(0,83,122,0.1)); border-color: rgba(168,232,249,0.2);"><i class="fas fa-calendar-week" style="color: #A8E8F9;"></i></div><div class="stat-number">'+weekI.length+'</div><div class="stat-label">Upcoming Interviews</div></div></div>'+
+    '<div class="col-6 col-md-4"><div class="stat-card border-success"><div class="stat-icon" style="background: linear-gradient(135deg, rgba(40,167,69,0.15), rgba(32,201,151,0.1)); border-color: rgba(40,167,69,0.2);"><i class="fas fa-user-check" style="color: #28a745;"></i></div><div class="stat-number">'+shortlisted+'</div><div class="stat-label">Shortlisted</div></div></div>';
   const stages = ['CV Screening','First Interview','Second Interview','Final Interview','Offer','Onboarding'];
   const colors = ['#F5A201','#A8E8F9','#00537A','#6f42c1','#2ECC71','#20c997'];
   let bars = '';
