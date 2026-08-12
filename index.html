@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Recruitment Management System</title>
     <!-- Bootstrap 5.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -411,9 +414,6 @@
             border-color: var(--accent) !important;
             background: var(--card-bg) !important;
         }
-        form-control:hover, .form-select:hover {
-            border-color: var(--accent) !important;
-        }
         .form-control::placeholder { color: var(--text-muted) !important; opacity: 0.5; }
         .form-label { font-weight: 600; color: var(--text-heading); margin-bottom: 8px; font-size: 0.9rem; }
         select.form-select option { background: var(--bg-solid); color: var(--text); }
@@ -464,6 +464,8 @@
             color: var(--history-text) !important;
         }
         .calendar-event-history .text-muted {
+            color: rgba(255,255,255,0.65) !important;
+        }
         .editable-cell { cursor: text; transition: background 0.2s; border-radius: 4px; padding: 2px 4px; }
         .editable-cell:hover { outline: 1px dashed var(--primary); background: rgba(0,83,122,0.04); }
         .editable-cell:focus { outline: 2px solid var(--primary); background: #fff; }
@@ -473,11 +475,8 @@
         #document-list .card i.fa-file-pdf { color: #dc3545; }
         #document-list .card i.fa-file-image { color: #28a745; }
         #document-list .card i.fa-file { color: #0d6efd; }
-        #analytics-metrics .stat-card { padding: 20px 18px; }
-        #analytics-metrics .stat-number { font-size: 1.8rem; }
+
         .insight-card { border-radius: 16px; padding: 16px; background: var(--card-bg); border: 1px solid var(--border); }
-            color: rgba(255,255,255,0.65) !important;
-        }
         .bg-dark, .badge.bg-dark {
             background-color: var(--history-bg) !important;
             color: var(--history-text) !important;
@@ -540,7 +539,7 @@
         }
         .timeline-item:hover { box-shadow: var(--shadow-md); transform: translateX(4px); }
         .timeline-item .badge { font-size: 0.7rem; padding: 4px 12px; }
-        
+
         /* ===== DASHBOARD STATUS ACCENTS ===== */
         .border-warning { border-color: #f0ad4e !important; }
         .border-info { border-color: #A8E8F9 !important; }
@@ -582,10 +581,6 @@
         }
         .login-orb-1 { width: 400px; height: 400px; background: #A8E8F9; top: 5%; right: 5%; animation: orbFloat 10s ease-in-out infinite; }
         .login-orb-2 { width: 350px; height: 350px; background: #F5A201; bottom: 10%; left: 5%; animation: orbFloat 12s ease-in-out infinite reverse; }
-        @keyframes orbFloat {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-30px) scale(1.05); }
-        }
         .login-container {
             position: relative; z-index: 1; width: 100%; max-width: 420px;
             padding: 16px; animation: loginSlideUp 0.7s ease-out;
@@ -777,6 +772,9 @@
                             <span class="login-spinner"></span>Signing in...
                         </span>
                     </button>
+                    <div style="text-align:center;margin-top:12px;">
+                      <a href="#" onclick="emergencyLogin();return false" style="color:rgba(255,255,255,0.4);font-size:0.75rem;text-decoration:underline;">Trouble logging in? Click here</a>
+                    </div>
                 </form>
                 <div class="login-footer">
                     <small>&copy; 2026 HR Recruitment System. All rights reserved.</small>
@@ -787,7 +785,7 @@
 
     <!-- MAIN APPLICATION -->
     <div id="main-app" class="d-none">
-        
+
         <!-- NAVBAR -->
         <nav class="navbar navbar-expand-lg navbar-main">
             <div class="container-fluid">
@@ -799,19 +797,18 @@
                         <span class="glass-icon glass-icon-sm me-2" style="width: 36px; height: 36px; font-size: 0.9rem; background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.15);"><i class="fas fa-users-gear"></i></span>
                         <i class="fas fa-sparkles me-2" style="color:var(--gold);"></i>Recruitment Management System
                         <span class="ms-3 small fw-normal" id="live-clock" style="color:var(--text-muted); font-size: 0.8rem;"></span>
-                        <span id="cloud-status-indicator" class="ms-2"></span>
-                        <button class="btn btn-sm ms-2" onclick="forceSync()" title="Force sync now" style="background:var(--glass-bg);border:1px solid var(--border);border-radius:50px;padding:4px 12px;font-size:0.75rem;color:var(--text);">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
+                        <span class="ms-3 badge" id="cloud-status-badge" style="display:none; font-size:0.7rem; background:var(--emerald); cursor:pointer;" onclick="pullFromFirebase()" title="Click to refresh from cloud">
+                            <i class="fas fa-cloud me-1"></i><span id="cloud-status-text">Live</span>
+                        </span>
                     </a>
                 </div>
-                
+
                 <div class="d-flex align-items-center gap-3">
                     <!-- Day/Night mode toggle -->
                     <button onclick="toggleTheme()" class="btn btn-link" title="Toggle Day/Night Mode" style="color:var(--text-heading);">
                         <i id="theme-icon" class="fas fa-moon fa-lg"></i>
                     </button>
-                    
+
                     <!-- Logout -->
                     <button onclick="logout()" class="btn btn-light btn-sm">
                         <i class="fas fa-sign-out-alt me-1"></i>Logout
@@ -822,7 +819,7 @@
 
         <div class="container-fluid">
             <div class="row">
-                
+
                 <!-- SIDEBAR -->
                 <div id="sidebar" class="col-lg-2 col-md-3 sidebar p-3 d-md-block">
                     <div class="list-group list-group-flush">
@@ -850,26 +847,22 @@
                             <i class="fas fa-file-export me-3"></i>
                             <span>Export Report</span>
                         </a>
-                        <a onclick="navigateTo('analytics')" class="list-group-item list-group-item-action d-flex align-items-center" id="menu-analytics">
-                            <i class="fas fa-chart-line me-3"></i>
-                            <span>Analytics</span>
-                        </a>
-
                         <hr class="my-4">
-                        
+
                         <!-- Quick actions -->
                         <div class="px-3 small mb-3" style="color: var(--text-muted); letter-spacing: 1px; font-weight: 600;">QUICK ACTIONS</div>
                         <button onclick="showPDFDateModal()" class="btn w-100 mb-2" style="background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); color: var(--text);">
                             <i class="fas fa-file-pdf me-2"></i>Download PDF Report
                         </button>
-                        <a onclick="showCloudSettings()" class="list-group-item list-group-item-action d-flex align-items-center" id="menu-cloud">
-                            <i class="fas fa-cloud me-3"></i>
-                            <span>Cloud Settings</span>
-                        </a>
-                        <a onclick="showTelegramSettings()" class="list-group-item list-group-item-action d-flex align-items-center" id="menu-telegram">
-                            <i class="fab fa-telegram-plane me-3"></i>
-                            <span>Telegram Settings</span>
-                        </a>
+
+                        <button onclick="pullFromFirebase()" class="btn w-100 mb-2" style="background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); color: var(--text);">
+                            <i class="fas fa-cloud-download-alt me-2"></i>Refresh Cloud
+                        </button>
+
+                        <button onclick="syncGsheetNow()" class="btn w-100 mb-2" style="background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); color: var(--text);">
+                            <i class="fas fa-file-excel me-2"></i>Sync Google Sheets
+                        </button>
+
                         <button onclick="resetAllData()" class="btn w-100 mb-2" style="background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); color: var(--text);">
                             <i class="fas fa-trash-can me-2"></i>Reset All Data
                         </button>
@@ -878,11 +871,11 @@
 
                 <!-- MAIN CONTENT AREA -->
                 <div class="col-lg-10 col-md-9 main-content p-4" id="content-area">
-                    
+
                     <!-- DASHBOARD PAGE -->
                     <div id="page-dashboard">
                         <h3 class="mb-4"><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-tachometer-alt"></i></span> Dashboard Overview</h3>
-                        
+
                         <div class="row g-4 mb-5" id="dashboard-cards">
                             <!-- Cards populated by JS -->
                         </div>
@@ -892,7 +885,7 @@
                         <div class="row g-4 mb-5" id="interview-summary-cards">
                             <!-- Populated by JS -->
                         </div>
-                        
+
                         <!-- Pipeline -->
                         <div class="card mb-4">
                             <div class="card-header">
@@ -904,7 +897,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <h5 class="mb-3"><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-clock-rotate"></i></span> Recent Activity</h5>
                         <div class="table-responsive">
                             <table class="table table-hover align-middle" id="recent-table">
@@ -922,18 +915,37 @@
                             </table>
                         </div>
                     </div>
-                    
+
                     <!-- ADD CANDIDATE PAGE -->
                     <div id="page-add" class="d-none">
                         <h3 class="mb-4"><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-user-plus"></i></span> Add New Candidate Record</h3>
-                        
+
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <form id="candidate-form" onsubmit="handleAddSubmit(event)">
                                     <div class="row g-3">
                                         <div class="col-md-4">
                                             <label class="form-label">Position Title <span class="text-danger">*</span></label>
-                                            <input type="text" id="form-position" class="form-control" required>
+                                            <input type="text" id="form-position" class="form-control" list="position-list" required>
+                                            <datalist id="position-list">
+                                                <option value="School Principal">
+                                                <option value="Vice School Principal">
+                                                <option value="KH-Coordinator">
+                                                <option value="Department Head EN">
+                                                <option value="Department Head KH">
+                                                <option value="Finance Director">
+                                                <option value="Finance Manager">
+                                                <option value="Finance Supervisor">
+                                                <option value="HR Director">
+                                                <option value="HR Manager">
+                                                <option value="HR Supervisor">
+                                                <option value="Admin Manager">
+                                                <option value="Admin Supervisor">
+                                                <option value="School Counselling Manager">
+                                                <option value="School Counselling Supervisor">
+                                                <option value="Customer Service Supervisor">
+                                                <option value="Other (manual)">
+                                            </datalist>
                                         </div>
                                         <div class="col-md-4">
                                             <label class="form-label">Department <span class="text-danger">*</span></label>
@@ -952,7 +964,7 @@
                                             <label class="form-label">Request Date</label>
                                             <input type="date" id="form-request-date" class="form-control">
                                         </div>
-                                        
+
                                         <div class="col-md-4">
                                             <label class="form-label">Candidate Name <span class="text-danger">*</span></label>
                                             <input type="text" id="form-name" class="form-control" required>
@@ -965,7 +977,7 @@
                                             <label class="form-label">Email Address</label>
                                             <input type="email" id="form-email" class="form-control">
                                         </div>
-                                        
+
                                         <div class="col-md-3">
                                             <label class="form-label">CV Received Date</label>
                                             <input type="date" id="form-cv-date" class="form-control">
@@ -987,7 +999,7 @@
                                                 <option value="Phone">Phone</option>
                                             </select>
                                         </div>
-                                        
+
                                         <div class="col-md-3">
                                             <label class="form-label">Interview Status</label>
                                             <select id="form-status" class="form-select">
@@ -1021,7 +1033,7 @@
                                             <label class="form-label">Location / Link</label>
                                             <input type="text" id="form-interview-location" class="form-control" placeholder="Room or meeting link">
                                         </div>
-                                        
+
                                         <div class="col-md-6">
                                             <label class="form-label">Hiring Manager</label>
                                             <input type="text" id="form-manager" class="form-control">
@@ -1035,15 +1047,15 @@
                                             <label class="form-label">Upload CV (PDF)</label>
                                             <input type="file" id="form-cv-pdf" class="form-control" accept=".pdf" onchange="handlePDFUpload('form-cv-pdf', 'form-cv-pdf-name')">
                                             <small id="form-cv-pdf-name" class="text-muted"></small>
-                                            <small class="text-muted">Max 2MB. PDF files only.</small>
+                                            <small class="text-muted">Max 2MB. PDF files only. Uploaded PDFs are saved to Google Drive (RMS CV Files) when Sheets sync is on.</small>
                                         </div>
-                                        
+
                                         <div class="col-12">
                                             <label class="form-label">Remarks / Notes</label>
                                             <textarea id="form-remarks" class="form-control" rows="3" placeholder="Any additional comments..."></textarea>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="mt-4">
                                         <button type="submit" class="btn btn-orange px-5">Save Candidate Record</button>
                                         <button type="button" onclick="navigateTo('records')" class="btn btn-secondary ms-3">Cancel</button>
@@ -1052,24 +1064,24 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- RECORDS PAGE -->
                     <div id="page-records" class="d-none">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h3><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-list-check"></i></span> Recruitment Records</h3>
-                            
+
                             <div class="d-flex gap-3">
                                 <!-- Global Search -->
                                 <div class="input-group" style="width: 320px;">
                                     <span class="input-group-text" style="background: var(--input-bg) !important; backdrop-filter: blur(12px); border: 1.5px solid var(--input-border) !important; border-right: none !important; border-radius: 16px 0 0 16px !important; color: var(--text-muted) !important;"><i class="fas fa-search"></i></span>
                                     <input type="text" id="search-input" class="form-control" placeholder="Search candidate, position, status..." onkeyup="if(event.keyCode===13) filterRecords()">
                                 </div>
-                                
+
                                 <button onclick="filterRecords()" class="btn btn-primary">Filter</button>
                                 <button onclick="clearFilters()" class="btn btn-outline-secondary">Clear</button>
                             </div>
                         </div>
-                        
+
                         <!-- Filters -->
                         <div class="row mb-3 g-2">
                             <div class="col-md-3">
@@ -1093,7 +1105,7 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
                             <table class="table table-hover align-middle" id="records-table">
                                 <thead>
@@ -1115,14 +1127,14 @@
                             </table>
                         </div>
                     </div>
-                    
+
                     <!-- NEW: INTERVIEW CALENDAR PAGE -->
                     <div id="page-calendar" class="d-none">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h3><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-calendar-check"></i></span> Interview Calendar</h3>
-    
+
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-lg-8">
                                 <!-- Calendar View Tabs -->
@@ -1140,7 +1152,7 @@
                                         <a onclick="switchCalendarView('khmer')" class="nav-link" id="tab-khmer">Khmer Calendar</a>
                                     </li>
                                 </ul>
-                                
+
                                 <!-- Calendar Controls -->
                                 <div id="calendar-controls" class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                     <div class="d-flex align-items-center">
@@ -1153,7 +1165,7 @@
                                         </button>
                                         <button onclick="goToToday()" class="btn btn-orange">Today</button>
                                     </div>
-                                    
+
                                     <div class="d-flex gap-3 small align-items-center flex-wrap">
                                         <div><span class="badge" style="background:#0d6efd;color:#fff;">First Interview</span></div>
                                         <div><span class="badge" style="background:#fd7e14;color:#fff;">Second Interview</span></div>
@@ -1164,7 +1176,7 @@
                                         <div><span class="badge" style="background:#8b0000;color:#fff;">Noneproceed</span></div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Calendar Container (populated by JS) -->
                                 <div id="calendar-container" class="card shadow-sm p-3"></div>
 
@@ -1199,11 +1211,11 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- EXPORT PAGE -->
                     <div id="page-export" class="d-none">
                         <h3 class="mb-4"><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-file-export"></i></span> Export &amp; Import Reports</h3>
-                        
+
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <div class="card shadow-sm h-100">
@@ -1222,7 +1234,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <div class="card shadow-sm h-100">
                                     <div class="card-body text-center py-5">
@@ -1233,16 +1245,15 @@
                                             <button onclick="exportJSON()" class="btn btn-primary">
                                                 <i class="fas fa-download me-2"></i>Export Current Data as JSON
                                             </button>
-                                  		<spacer>
                                                 <div class="text-muted">Import JSON File</div>
                                                 <input type="file" id="import-json" accept=".json" class="form-control" onchange="importJSON(event)">
-                                           
+
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row g-4 mt-2">
                             <div class="col-md-12">
                                 <div class="card shadow-sm">
@@ -1272,39 +1283,6 @@
                             <div class="d-flex align-items-center gap-3">
                                 <div class="glass-icon glass-icon-sm"><i class="fas fa-info-circle"></i></div>
                                 <p class="mb-0">All data is stored locally in your browser (LocalStorage). Export regularly to avoid data loss when clearing browser cache.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ANALYTICS PAGE -->
-                    <div id="page-analytics" class="d-none">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3><span class="glass-icon glass-icon-sm me-2"><i class="fas fa-chart-line"></i></span> Advanced Analytics</h3>
-                            <button onclick="renderAnalyticsCharts()" class="btn btn-orange btn-sm">
-                                <i class="fas fa-rotate me-1"></i>Refresh Charts
-                            </button>
-                        </div>
-                        <div class="row g-4 mb-4" id="analytics-metrics"></div>
-                        <div class="row g-4">
-                            <div class="col-md-8">
-                                <div class="card"><div class="card-body"><canvas id="chart-hiring-trend" height="200"></canvas></div></div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card"><div class="card-body"><canvas id="chart-status-dist" height="200"></canvas></div></div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card"><div class="card-body"><canvas id="chart-pipeline-funnel" height="200"></canvas></div></div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card"><div class="card-body"><canvas id="chart-dept" height="200"></canvas></div></div>
-                            </div>
-                        </div>
-                        <div class="row g-4 mt-2">
-                            <div class="col-12">
-                                <div class="card"><div class="card-body">
-                                    <h5 class="mb-3"><i class="fas fa-lightbulb me-2" style="color:#F5A201;"></i>Insights</h5>
-                                    <div id="analytics-insights" class="row g-3"></div>
-                                </div></div>
                             </div>
                         </div>
                     </div>
@@ -1356,11 +1334,11 @@
                 <div class="modal-body">
                     <form id="modal-form" onsubmit="handleModalSubmit(event)">
                         <input type="hidden" id="modal-id">
-                        
+
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label">Position Title <span class="text-danger">*</span></label>
-                                <input type="text" id="modal-position" class="form-control" required>
+                                 <label class="form-label">Position Title <span class="text-danger">*</span></label>
+                                <input type="text" id="modal-position" class="form-control" list="position-list" required>
                             </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Department <span class="text-danger">*</span></label>
@@ -1379,7 +1357,7 @@
                                 <label class="form-label">Request Date</label>
                                 <input type="date" id="modal-request-date" class="form-control">
                             </div>
-                            
+
                             <div class="col-md-4">
                                 <label class="form-label">Candidate Name <span class="text-danger">*</span></label>
                                 <input type="text" id="modal-name" class="form-control" required>
@@ -1392,7 +1370,7 @@
                                             <label class="form-label">Email</label>
                                             <input type="email" id="modal-email" class="form-control">
                                         </div>
-                            
+
                             <div class="col-md-3">
                                 <label class="form-label">CV Received Date</label>
                                 <input type="date" id="modal-cv-date" class="form-control">
@@ -1414,7 +1392,7 @@
                                     <option value="Phone">Phone</option>
                                 </select>
                             </div>
-                            
+
                             <div class="col-md-3">
                                 <label class="form-label">Interview Status</label>
                                 <select id="modal-status" class="form-select">
@@ -1448,7 +1426,7 @@
                                 <label class="form-label">Location / Link</label>
                                 <input type="text" id="modal-interview-location" class="form-control" placeholder="Room or meeting link">
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label class="form-label">Hiring Manager</label>
                                 <input type="text" id="modal-manager" class="form-control">
@@ -1462,9 +1440,9 @@
                                 <label class="form-label">Upload CV (PDF)</label>
                                 <input type="file" id="modal-cv-pdf" class="form-control" accept=".pdf" onchange="handlePDFUpload('modal-cv-pdf', 'modal-cv-pdf-name')">
                                 <small id="modal-cv-pdf-name" class="text-muted"></small>
-                                <small class="text-muted">Max 2MB. PDF files only.</small>
+                                <small class="text-muted">Max 2MB. PDF files only. Uploaded PDFs are saved to Google Drive (RMS CV Files) when Sheets sync is on.</small>
                             </div>
-                            
+
                             <div class="col-12">
                                 <label class="form-label">Remarks / Notes</label>
                                 <textarea id="modal-remarks" class="form-control" rows="4"></textarea>
@@ -1503,7 +1481,7 @@
                                 <label class="form-label">Department</label>
                                 <input type="text" id="schedule-department" class="form-control" readonly>
                             </div>
-                            
+
                             <div class="col-md-3">
                                 <label class="form-label">Interview Date <span class="text-danger">*</span></label>
                                 <input type="date" id="schedule-date" class="form-control" required>
@@ -1532,7 +1510,7 @@
                                     <option value="Onboarding">Onboarding</option>
                                 </select>
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label class="form-label">Interview Panel Members</label>
                                 <input type="text" id="schedule-panel" class="form-control" placeholder="e.g. David Kim, Maria Lopez">
@@ -1541,7 +1519,7 @@
                                 <label class="form-label">Location / Meeting Link</label>
                                 <input type="text" id="schedule-location" class="form-control" placeholder="Room 101 or https://zoom.us/...">
                             </div>
-                            
+
                             <div class="col-md-6">
                                 <label class="form-label">Interview Status</label>
                                 <select id="schedule-status" class="form-select">
@@ -1555,7 +1533,7 @@
 				    <option value="Noneshortlist">Noneshortlist</option>
                                 </select>
                             </div>
-                            
+
                             <div class="col-md-4">
                                 <label class="form-label">Round Result</label>
                                 <select id="schedule-round-result" class="form-select">
@@ -1677,64 +1655,8 @@
         </div>
     </div>
 
-    <!-- CLOUD SETTINGS MODAL -->
-    <div class="modal fade" id="cloudSettingsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-cloud me-2"></i>Cloud & Automation Settings</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="cloud-settings-form" onsubmit="saveCloudSettings(event)">
-                        <h6 class="fw-bold mb-3" style="color:var(--emerald);"><i class="fab fa-google me-2"></i>Google Sheets Cloud Database</h6>
-                        <div class="mb-3">
-                            <label class="form-label">Published CSV URL <span class="text-muted">(hardcoded)</span></label>
-                            <input type="text" class="form-control" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5kfju8zqXLac-EM-ovsQFcazZxAmA_AH5aBPfTYaK1Uex7FzM-XuJXokVJsEmhzunwi5Bvv3KDWUm/pub?output=csv" readonly onclick="this.select()">
-                            <small class="text-muted">File → Share → Publish to web → CSV</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Google Apps Script Web App URL <span class="text-danger">*</span></label>
-                            <input type="url" id="cloud-webapp-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec" required>
-                            <small class="text-muted">Deploy the provided Apps Script as a web app and paste its URL here</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Google Sheet ID (optional, for reference)</label>
-                            <input type="text" id="cloud-sheet-id" class="form-control" placeholder="1atiFy_IKyBWp5XvaxLvlFwwdpK37D4IUxYj1V81CMjw" value="1atiFy_IKyBWp5XvaxLvlFwwdpK37D4IUxYj1V81CMjw">
-                            <small class="text-muted">From your sheet URL: https://docs.google.com/spreadsheets/d/<strong>YOUR_SHEET_ID</strong>/edit</small>
-                        </div>
-                        <hr class="my-3">
-                        <h6 class="fw-bold mb-3" style="color:var(--gold);"><i class="fas fa-network-wired me-2"></i>n8n Automation Webhook</h6>
-                        <div class="mb-3">
-                            <label class="form-label">n8n Webhook URL</label>
-                            <input type="url" id="cloud-n8n-webhook" class="form-control" placeholder="https://your-n8n.example.com/webhook/recruitment">
-                            <small class="text-muted">Receives events: candidate.added, candidate.updated, interview.scheduled, etc.</small>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <span id="cloud-connection-status"></span>
-                        </div>
-                        <div class="glass-panel p-3 small">
-                            <i class="fas fa-info-circle me-1" style="color:var(--primary);"></i>
-                            <strong>Setup Instructions:</strong>
-                            <ol class="mb-0 mt-1 ps-3">
-                                <li>Open the Google Sheet</li>
-                                <li>Go to Extensions > Apps Script</li>
-                                <li>Replace the code with the provided <strong>Code.gs</strong></li>
-                                <li>Deploy > New deployment > Web app</li>
-                                <li>Set "Execute as: Me", "Who has access: Anyone"</li>
-                                <li>Copy the Web App URL and paste above</li>
-                            </ol>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" onclick="clearCloudSettings()" class="btn btn-outline-danger">Clear Settings</button>
-                    <button type="button" onclick="document.getElementById('cloud-settings-form').requestSubmit()" class="btn btn-orange">Save & Connect</button>
-                </div>
-            </div>
-        </div>
-    </div>
+
+
 
     <!-- DOCUMENT UPLOAD MODAL -->
     <div class="modal fade" id="documentUploadModal" tabindex="-1" aria-hidden="true">
@@ -1767,11 +1689,30 @@
         </div>
     </div>
 
+    <!-- Confirm action modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalTitle"><i class="fas fa-exclamation-triangle me-2"></i>Are you sure?</h5>
+                </div>
+                <div class="modal-body" id="confirmModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="confirmModalYes" class="btn btn-danger"><i class="fas fa-check me-1"></i>Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast container -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11000;"></div>
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11000;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
     <script>
 // ============= DATA STORE =============
 function getArray(key, fallback) {
@@ -1789,195 +1730,10 @@ let currentCandidateId = null;
 let _pdfBlobUrl = null;
 let _pdfFileName = '';
 candidates.forEach(c => { if (!c.interviewHistory) c.interviewHistory = []; });
-if (!users.some(u => u.username === 'admin')) {
-  users.push({id:1,username:'admin',fullname:'Administrator',email:'admin@hr.com',role:'Admin',password:'admin123',created:new Date().toISOString().split('T')[0]});
+if (!Array.isArray(users) || !users.some(u => u && u.username === 'admin')) {
+  users = [{id:1,username:'admin',fullname:'Administrator',email:'admin@hr.com',role:'Admin',password:'admin123',created:new Date().toISOString().split('T')[0]}];
   localStorage.setItem('rm_users', JSON.stringify(users));
 }
-// ============= CLOUD DATABASE INFRASTRUCTURE =============
-const DEFAULT_WEBAPP = 'https://script.google.com/macros/s/AKfycbx8sYtfAy-S5XQy01roxIU7UxJwFCadRXg89zxg5AXCGWUQg5tSedqsIPliGVACvK7dcw/exec';
-const SHEET_ID = '1atiFy_IKyBWp5XvaxLvlFwwdpK37D4IUxYj1V81CMjw';
-const PUBLISHED_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5kfju8zqXLac-EM-ovsQFcazZxAmA_AH5aBPfTYaK1Uex7FzM-XuJXokVJsEmhzunwi5Bvv3KDWUm/pub?output=csv';
-const CLOUD_CONFIG = {
-  sheetWebAppUrl: localStorage.getItem('rm_sheet_webapp') || DEFAULT_WEBAPP,
-  sheetId: localStorage.getItem('rm_sheet_id') || SHEET_ID,
-  n8nWebhookUrl: localStorage.getItem('rm_n8n_webhook') || '',
-};
-let _cloudConnected = false;
-let _cloudDbEnabled = true;
-let _lastSyncData = '';
-
-function setCloudStatus(connected, msg) {
-  _cloudConnected = connected;
-  const el = document.getElementById('cloud-status-indicator');
-  if (!el) return;
-  el.innerHTML = connected
-    ? '<i class="fas fa-cloud text-success ms-1" title="' + (msg || 'Connected') + '"></i>'
-    : '<i class="fas fa-cloud-slash text-muted ms-1" title="' + (msg || 'Disconnected') + '"></i>';
-}
-
-function getWebAppUrl() {
-  return CLOUD_CONFIG.sheetWebAppUrl || DEFAULT_WEBAPP;
-}
-
-function jsonp(url, callbackName) {
-  return new Promise(function(resolve, reject) {
-    var cb = callbackName || 'jsonp_' + Date.now();
-    var script = document.createElement('script');
-    var timeout = setTimeout(function() {
-      cleanup();
-      reject(new Error('JSONP timeout'));
-    }, 20000);
-    function cleanup() {
-      delete window[cb];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      clearTimeout(timeout);
-    }
-    window[cb] = function(data) {
-      cleanup();
-      resolve(data);
-    };
-    var sep = url.indexOf('?') === -1 ? '?' : '&';
-    script.src = url + sep + 'callback=' + encodeURIComponent(cb);
-    script.onerror = function() {
-      cleanup();
-      reject(new Error('JSONP network error'));
-    };
-    document.head.appendChild(script);
-  });
-}
-
-async function callSheetApi(action, params) {
-  var url = getWebAppUrl() + '?action=' + encodeURIComponent(action);
-  if (params) {
-    for (var k in params) {
-      if (params.hasOwnProperty(k)) {
-        url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-      }
-    }
-  }
-  url += '&_=' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-  try {
-    return await jsonp(url);
-  } catch (e) {
-    try {
-      return await xhrJson(url);
-    } catch (e2) {
-      throw new Error(e.message + '; XHR also failed: ' + e2.message);
-    }
-  }
-}
-
-function xhrJson(url) {
-  return new Promise(function(resolve, reject) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.withCredentials = false;
-    xhr.onload = function() {
-      try { resolve(JSON.parse(xhr.responseText)); }
-      catch(e) { reject(new Error('Bad JSON: ' + (xhr.responseText || '').substring(0, 80))); }
-    };
-    xhr.onerror = function() { reject(new Error('Network error')); };
-    xhr.send();
-  });
-}
-
-async function testCloudConnection() {
-  var url = getWebAppUrl();
-  if (!url) { setCloudStatus(false, 'No URL'); return false; }
-  try {
-    const data = await callSheetApi('ping');
-    if (data && data.status === 'ok') {
-      setCloudStatus(true, 'Connected');
-      showToast('Google Sheets connected!', 'success');
-      return true;
-    }
-    setCloudStatus(false, data && data.error ? data.error : 'Unknown');
-    return false;
-  } catch(e) {
-    setCloudStatus(false, e.message);
-    showToast('Connection failed: ' + e.message, 'danger');
-    return false;
-  }
-}
-
-async function syncItemToCloud(item) {
-  try { var r = await callSheetApi('sync', { data: JSON.stringify(item) }); if (r && r.error) { console.log('syncItemToCloud error for', item.id || item._type, r.error); return false; } return true; }
-  catch(e) { console.log('syncItemToCloud threw for', item.id || item._type, e.message); return false; }
-}
-
-async function syncCandidatesToCloud() {
-  var url = getWebAppUrl();
-  if (!url) return false;
-  var ok = true;
-  var allItems = [];
-  candidates.forEach(function(c) { allItems.push(c); });
-  try { loadDocuments(); } catch(e) {}
-  _documents.forEach(function(d) {
-    allItems.push({ _type: 'document', id: d.id, name: d.name, type: d.type, size: d.size, candidateId: d.candidateId || 0, candidateName: d.candidateName || '', uploadedAt: d.uploadedAt });
-  });
-  for (var i = 0; i < allItems.length; i++) {
-    if (!await syncItemToCloud(allItems[i])) { ok = false; }
-  }
-  if (ok) {
-    _lastSyncData = JSON.stringify(allItems);
-    setCloudStatus(true, 'Synced');
-  } else {
-    setCloudStatus(false, 'Partial sync failure');
-  }
-  return ok;
-}
-
-async function fetchCandidatesFromPublishedCSV() {
-  var csvUrl = PUBLISHED_SHEET_CSV;
-  if (!csvUrl) return null;
-  var sep = csvUrl.indexOf('?') === -1 ? '?' : '&';
-  var url = csvUrl + sep + '_=' + Date.now();
-  var csvText;
-  try {
-    var resp = await fetch(url);
-    csvText = await resp.text();
-  } catch(e) {
-    try {
-      csvText = await new Promise(function(resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onload = function() { resolve(xhr.responseText); };
-        xhr.onerror = function() { reject(new Error('CSV network error')); };
-        xhr.send();
-      });
-    } catch(e2) {
-      console.log('CSV fetch error:', e2.message);
-      return null;
-    }
-  }
-  if (!csvText || !csvText.trim()) return null;
-  try {
-    var wb = XLSX.read(csvText, {type: 'string', raw: true});
-    var ws = wb.Sheets[wb.SheetNames[0]];
-    var rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
-    if (!rows || rows.length < 2) return null;
-    var dataCol = -1;
-    for (var i = 0; i < (rows[0] || []).length; i++) {
-      if (String(rows[0][i]).toLowerCase().trim() === 'data') { dataCol = i; break; }
-    }
-    if (dataCol === -1 && rows[0] && rows[0].length >= 2) dataCol = 1;
-    if (dataCol === -1) return null;
-    var result = [];
-    for (var r = 1; r < rows.length; r++) {
-      var row = rows[r];
-      if (!row || !row[dataCol]) continue;
-      try {
-        var candidate = JSON.parse(row[dataCol]);
-        if (candidate && candidate.id) result.push(candidate);
-      } catch(e) {}
-    }
-    return result;
-  } catch(e) {
-    console.log('CSV parse error:', e.message);
-    return null;
-  }
-}
-
 function processFetchedItems(items) {
   if (!items || !items.length) return;
   var cloudCandidates = [];
@@ -2017,66 +1773,6 @@ function processFetchedItems(items) {
   if (document.getElementById('page-calendar') && !document.getElementById('page-calendar').classList.contains('d-none')) renderCalendar();
   updateDocumentStats();
   renderDocuments();
-}
-
-async function syncCandidatesFromCloud() {
-  var url = getWebAppUrl();
-  var freshItems = null;
-  if (url) {
-    try {
-      var data = await callSheetApi('fetch');
-      if (data && data.data && Array.isArray(data.data)) freshItems = data.data;
-    } catch(e) { console.log('Apps Script fetch failed:', e.message); }
-  }
-  if (!freshItems || !freshItems.length) {
-    var csvData = await fetchCandidatesFromPublishedCSV();
-    if (csvData && csvData.length > 0) freshItems = csvData;
-  }
-  if (freshItems && freshItems.length > 0) {
-    var newStr = JSON.stringify(freshItems);
-    if (newStr !== _lastSyncData) {
-      _lastSyncData = newStr;
-      processFetchedItems(freshItems);
-      showToast('Synced!', 'success');
-      setCloudStatus(true, 'Synced');
-      return true;
-    }
-  }
-  return false;
-}
-
-// ============= N8N AUTOMATION INFRASTRUCTURE =============
-const N8N_EVENTS = {
-  CANDIDATE_ADDED: 'candidate.added',
-  CANDIDATE_UPDATED: 'candidate.updated',
-  CANDIDATE_DELETED: 'candidate.deleted',
-  INTERVIEW_SCHEDULED: 'interview.scheduled',
-  INTERVIEW_RESCHEDULED: 'interview.rescheduled',
-  STATUS_CHANGED: 'status.changed',
-  REPORT_EXPORTED: 'report.exported',
-};
-
-async function triggerN8nWebhook(eventName, payload = {}) {
-  if (!CLOUD_CONFIG.n8nWebhookUrl) return;
-  try {
-    const url = CLOUD_CONFIG.n8nWebhookUrl + (CLOUD_CONFIG.n8nWebhookUrl.includes('?') ? '&' : '?') + 'event=' + eventName;
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event: eventName, timestamp: new Date().toISOString(), ...payload })
-    });
-  } catch(e) { /* silent */ }
-}
-
-async function triggerN8nAutomation(eventName, candidateId) {
-  const c = candidates.find(x => x.id === candidateId);
-  await triggerN8nWebhook(eventName, {
-    candidate: c ? {
-      id: c.id, name: c.name, position: c.position, department: c.department,
-      stage: c.stage, status: c.status, interviewDate: c.interviewDate,
-      email: c.phone, phone: c.phone
-    } : { id: candidateId }
-  });
 }
 
 // ============= ENTERPRISE SECURITY =============
@@ -2140,144 +1836,6 @@ function enforcePermission(action) {
   return true;
 }
 
-// ============= ADVANCED ANALYTICS =============
-let _analyticsCharts = {};
-
-function computeAnalytics() {
-  const total = candidates.length;
-  const stages = ['CV Screening', 'First Interview', 'Second Interview', 'Final Interview', 'Offer', 'Onboarding'];
-  const stageCounts = stages.map(s => ({ stage: s, count: candidates.filter(c => c.stage === s).length }));
-  const statusCounts = {};
-  candidates.forEach(c => { statusCounts[c.status] = (statusCounts[c.status] || 0) + 1; });
-  const deptCounts = {};
-  candidates.forEach(c => { const d = c.department || 'Unassigned'; deptCounts[d] = (deptCounts[d] || 0) + 1; });
-  const monthlyHires = {};
-  candidates.filter(c => c.status === 'Hired' && c.createdAt).forEach(c => {
-    const m = c.createdAt.substring(0, 7);
-    monthlyHires[m] = (monthlyHires[m] || 0) + 1;
-  });
-  const interviewTrend = {};
-  candidates.filter(c => c.interviewDate).forEach(c => {
-    const m = c.interviewDate.substring(0, 7);
-    interviewTrend[m] = (interviewTrend[m] || 0) + 1;
-  });
-  const conversionRate = total ? Math.round((candidates.filter(c => c.status === 'Hired').length / total) * 100) : 0;
-  const avgTimeToHire = candidates.filter(c => c.status === 'Hired' && c.createdAt && c.interviewDate).reduce((acc, c) => {
-    const start = new Date(c.createdAt).getTime();
-    const end = new Date(c.interviewDate).getTime();
-    return acc + (end - start) / (1000 * 60 * 60 * 24);
-  }, 0);
-  const avgDays = candidates.filter(c => c.status === 'Hired' && c.createdAt && c.interviewDate).length || 1;
-  return { total, stageCounts, statusCounts, deptCounts, monthlyHires, interviewTrend, conversionRate, avgTimeToHire: Math.round(avgTimeToHire / avgDays) };
-}
-
-function renderAnalyticsCharts() {
-  if (!document.getElementById('page-analytics') || document.getElementById('page-analytics').classList.contains('d-none')) return;
-  Object.values(_analyticsCharts).forEach(c => { try { c.destroy(); } catch(e) {} });
-  _analyticsCharts = {};
-  const a = computeAnalytics();
-  const colors = ['#A8E8F9','#F5A201','#2ECC71','#FF6B6B','#6f42c1','#20c997','#00537A','#fd7e14'];
-
-  // Pipeline funnel
-  const funnelEl = document.getElementById('chart-pipeline-funnel');
-  if (funnelEl) {
-    _analyticsCharts.pipeline = new Chart(funnelEl, {
-      type: 'bar',
-      data: {
-        labels: a.stageCounts.map(s => s.stage),
-        datasets: [{
-          label: 'Candidates',
-          data: a.stageCounts.map(s => s.count),
-          backgroundColor: colors.slice(0, a.stageCounts.length),
-          borderRadius: 8
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false }, title: { display: true, text: 'Pipeline Funnel' } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
-
-  // Status distribution (pie)
-  const statusEl = document.getElementById('chart-status-dist');
-  if (statusEl) {
-    const labels = Object.keys(a.statusCounts);
-    const data = Object.values(a.statusCounts);
-    _analyticsCharts.status = new Chart(statusEl, {
-      type: 'doughnut',
-      data: {
-        labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderWidth: 2 }]
-      },
-      options: { responsive: true, plugins: { title: { display: true, text: 'Status Distribution' } } }
-    });
-  }
-
-  // Department breakdown
-  const deptEl = document.getElementById('chart-dept');
-  if (deptEl) {
-    const labels = Object.keys(a.deptCounts);
-    const data = Object.values(a.deptCounts);
-    _analyticsCharts.dept = new Chart(deptEl, {
-      type: 'polarArea',
-      data: {
-        labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length) }]
-      },
-      options: { responsive: true, plugins: { title: { display: true, text: 'By Department' } } }
-    });
-  }
-
-  // Hiring trend line
-  const trendEl = document.getElementById('chart-hiring-trend');
-  if (trendEl) {
-    const months = Object.keys(a.monthlyHires).sort();
-    _analyticsCharts.trend = new Chart(trendEl, {
-      type: 'line',
-      data: {
-        labels: months,
-        datasets: [{
-          label: 'Hires',
-          data: months.map(m => a.monthlyHires[m] || 0),
-          borderColor: '#2ECC71', backgroundColor: 'rgba(46,204,113,0.1)',
-          fill: true, tension: 0.4, pointRadius: 5
-        }, {
-          label: 'Interviews',
-          data: months.map(m => a.interviewTrend[m] || 0),
-          borderColor: '#A8E8F9', backgroundColor: 'rgba(168,232,249,0.1)',
-          fill: true, tension: 0.4, pointRadius: 5
-        }]
-      },
-      options: { responsive: true, plugins: { title: { display: true, text: 'Monthly Trend' } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
-
-  // Insights
-  const insightsEl = document.getElementById('analytics-insights');
-  if (insightsEl) {
-    const totalHired = candidates.filter(c => c.status === 'Hired').length;
-    const totalRejected = candidates.filter(c => c.status === 'Rejected').length;
-    const pendingInterview = candidates.filter(c => c.status === 'Pending' && c.interviewDate).length;
-    const topPosition = Object.entries(candidates.reduce((acc, c) => { acc[c.position] = (acc[c.position] || 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1])[0];
-    const bottleneck = [...a.stageCounts].sort((a, b) => a.count - b.count)[0];
-    const hireRate = a.total ? (totalHired / a.total * 100).toFixed(1) : 0;
-    insightsEl.innerHTML =
-      '<div class="col-md-4"><div class="insight-card"><i class="fas fa-trophy me-2" style="color:#F5A201;"></i><strong>Top Position:</strong> ' + esc(topPosition?.[0] || 'N/A') + ' (' + (topPosition?.[1] || 0) + ' candidates)</div></div>' +
-      '<div class="col-md-4"><div class="insight-card"><i class="fas fa-hourglass-half me-2" style="color:#A8E8F9;"></i><strong>Bottleneck:</strong> ' + esc(bottleneck?.stage || 'N/A') + ' stage (' + (bottleneck?.count || 0) + ' candidates)</div></div>' +
-      '<div class="col-md-4"><div class="insight-card"><i class="fas fa-percentage me-2" style="color:#2ECC71;"></i><strong>Hire Rate:</strong> ' + hireRate + '% (' + totalHired + ' hired / ' + a.total + ' total)</div></div>' +
-      '<div class="col-md-4"><div class="insight-card"><i class="fas fa-clock me-2" style="color:#6f42c1;"></i><strong>Avg Time to Hire:</strong> ' + a.avgTimeToHire + ' days</div></div>' +
-      '<div class="col-md-4"><div class="insight-card"><i class="fas fa-calendar me-2" style="color:#fd7e14;"></i><strong>Pending Interviews:</strong> ' + pendingInterview + ' scheduled</div></div>' +
-      '<div class="col-md-4"><div class="insight-card"><i class="fas fa-ban me-2" style="color:#dc3545;"></i><strong>Rejected:</strong> ' + totalRejected + ' candidates</div></div>';
-  }
-
-  // Key metrics
-  const metricsEl = document.getElementById('analytics-metrics');
-  if (metricsEl) {
-    metricsEl.innerHTML =
-      '<div class="col-md-3"><div class="stat-card"><div class="stat-number" style="color:#00537A;">'+a.total+'</div><div class="stat-label">Total Candidates</div></div></div>' +
-      '<div class="col-md-3"><div class="stat-card"><div class="stat-number" style="color:#2ECC71;">'+a.conversionRate+'%</div><div class="stat-label">Hire Conversion</div></div></div>' +
-      '<div class="col-md-3"><div class="stat-card"><div class="stat-number" style="color:#F5A201;">'+a.avgTimeToHire+'d</div><div class="stat-label">Avg Time to Hire</div></div></div>' +
-      '<div class="col-md-3"><div class="stat-card"><div class="stat-number" style="color:#6f42c1;">'+(a.total ? Math.round(a.total / 6) : 0)+'</div><div class="stat-label">Predicted Next Month</div></div></div>';
-  }
-}
 
 // ============= CENTRALIZED DOCUMENT MANAGEMENT =============
 let _documents = getArray('rm_documents', []);
@@ -2288,6 +1846,7 @@ function loadDocuments() {
 
 function saveDocuments() {
   localStorage.setItem('rm_documents', JSON.stringify(_documents));
+  pushAllToFirebase();
 }
 
 function renderDocuments() {
@@ -2307,7 +1866,7 @@ function renderDocuments() {
     const icon = doc.type === 'application/pdf' ? 'fa-file-pdf' : doc.type?.includes('image') ? 'fa-file-image' : 'fa-file';
     const color = doc.type === 'application/pdf' ? 'text-danger' : doc.type?.includes('image') ? 'text-success' : 'text-primary';
     var dataAvail = doc.data ? true : false;
-    html += '<div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="fas ' + icon + ' fa-3x mb-3 ' + color + '"></i><h6 class="fw-bold text-truncate" title="' + esc(doc.name) + '">' + esc(doc.name) + '</h6><small class="text-muted">' + size + ' | ' + (doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : '') + '</small><br><small class="text-muted">Linked to: ' + esc(doc.candidateName || 'General') + '</small>' + (dataAvail ? '' : '<br><span class="badge bg-warning text-dark mt-1">Cloud only - re-upload to download</span>') + '<div class="mt-2"><button class="btn btn-sm btn-outline-primary me-1" onclick="downloadDocument(' + realIdx + ')" title="Download"><i class="fas fa-download"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteDocument(' + realIdx + ')" title="Delete"><i class="fas fa-trash"></i></button></div></div></div></div>';
+    html += '<div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="fas ' + icon + ' fa-3x mb-3 ' + color + '"></i><h6 class="fw-bold text-truncate" title="' + esc(doc.name) + '">' + esc(doc.name) + '</h6><small class="text-muted">' + size + ' | ' + (doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : '') + '</small><br><small class="text-muted">Linked to: ' + esc(doc.candidateName || 'General') + '</small>' + (dataAvail ? '' : '<br><span class="badge bg-warning text-dark mt-1">Cloud only - re-upload to download</span>') + '<div class="mt-2"><button class="btn btn-sm btn-outline-info me-1" onclick="viewDocument(' + realIdx + ')" title="View"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline-primary me-1" onclick="downloadDocument(' + realIdx + ')" title="Download"><i class="fas fa-download"></i></button><button class="btn btn-sm btn-outline-danger" onclick="deleteDocument(' + realIdx + ')" title="Delete"><i class="fas fa-trash"></i></button></div></div></div></div>';
   });
   html += '</div>';
   container.innerHTML = html;
@@ -2330,7 +1889,6 @@ function uploadDocument() {
     });
     saveDocuments();
     renderDocuments();
-    await syncCandidatesToCloud();
     document.getElementById('doc-upload-form').reset();
     showToast('Document uploaded: ' + file.name, 'success');
     bootstrap.Modal.getInstance(document.getElementById('documentUploadModal')).hide();
@@ -2358,45 +1916,27 @@ async function deleteDocument(index) {
   _documents.splice(index, 1);
   saveDocuments();
   renderDocuments();
-  await syncCandidatesToCloud();
   showToast('Document deleted.', 'info');
 }
 
-// ============= CLOUD SETTINGS UI =============
-function showCloudSettings() {
-  document.getElementById('cloud-webapp-url').value = getWebAppUrl();
-  document.getElementById('cloud-sheet-id').value = CLOUD_CONFIG.sheetId;
-  document.getElementById('cloud-n8n-webhook').value = CLOUD_CONFIG.n8nWebhookUrl || '';
-  document.getElementById('cloud-connection-status').innerHTML = _cloudConnected
-    ? '<span class="text-success"><i class="fas fa-check-circle"></i> Connected to Google Sheets</span>'
-    : '<span class="text-muted"><i class="fas fa-minus-circle"></i> Not connected</span>';
-  new bootstrap.Modal(document.getElementById('cloudSettingsModal')).show();
-}
-
-function saveCloudSettings(e) {
-  e.preventDefault();
-  const webapp = document.getElementById('cloud-webapp-url').value.trim();
-  const sid = document.getElementById('cloud-sheet-id').value.trim();
-  const n8n = document.getElementById('cloud-n8n-webhook').value.trim();
-  localStorage.setItem('rm_sheet_webapp', webapp);
-  localStorage.setItem('rm_sheet_id', sid);
-  localStorage.setItem('rm_n8n_webhook', n8n);
-  CLOUD_CONFIG.sheetWebAppUrl = webapp;
-  CLOUD_CONFIG.sheetId = sid;
-  CLOUD_CONFIG.n8nWebhookUrl = n8n;
-  bootstrap.Modal.getInstance(document.getElementById('cloudSettingsModal')).hide();
-  showToast('Cloud settings saved!', 'success');
-  if (webapp) testCloudConnection();
-}
-
-function clearCloudSettings() {
-  if (!confirm('Clear cloud settings?')) return;
-  ['rm_sheet_webapp','rm_sheet_id','rm_n8n_webhook'].forEach(k => localStorage.removeItem(k));
-  CLOUD_CONFIG.sheetWebAppUrl = ''; CLOUD_CONFIG.sheetId = ''; CLOUD_CONFIG.n8nWebhookUrl = '';
-  _cloudConnected = false; _cloudDbEnabled = false; stopAutoSyncFromSheet();
-  ['cloud-webapp-url','cloud-sheet-id','cloud-n8n-webhook'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('cloud-connection-status').innerHTML = '';
-  showToast('Cloud settings cleared.', 'info');
+function viewDocument(index) {
+  const doc = _documents[index];
+  if (!doc || !doc.data) { showToast('File data not available on this device.', 'warning'); return; }
+  const bc = atob(doc.data);
+  const bn = new Uint8Array(bc.length);
+  for (let i = 0; i < bc.length; i++) bn[i] = bc.charCodeAt(i);
+  const blob = new Blob([bn], { type: doc.type || 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  if (doc.type === 'application/pdf') {
+    previewPDFDoc(doc.name, url);
+  } else if (doc.type?.startsWith('image/')) {
+    const w = window.open('');
+    if (w) { w.document.write('<img src="' + url + '" style="max-width:100%;max-height:100vh;display:block;margin:auto">'); w.document.title = doc.name; }
+    else { window.location.href = url; }
+  } else {
+    const a = document.createElement('a'); a.href = url; a.download = doc.name; a.click();
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 // ============= DOCUMENT UPLOAD UI =============
@@ -2420,90 +1960,15 @@ function updateDocumentStats() {
   document.getElementById('doc-total-size').textContent = totalMB;
 }
 
-// ============= TELEGRAM SETTINGS =============
-function getTelegramSettings() { return JSON.parse(localStorage.getItem('rm_telegram') || '{}'); }
-function saveTelegramSettings(e) {
-  e.preventDefault(); const token = document.getElementById('tg-token').value.trim();
-  const chatId = document.getElementById('tg-chat-id').value.trim();
-  const fn = document.getElementById('tg-filename').value.trim();
-  if (!token || !chatId) { showToast('Token and Chat ID are required.', 'danger'); return; }
-  localStorage.setItem('rm_telegram', JSON.stringify({token,chatId,filename:fn}));
-  bootstrap.Modal.getInstance(document.getElementById('telegramSettingsModal')).hide();
-  showToast('Telegram settings saved!', 'success');
-}
-function clearTelegramSettings() {
-  if (!confirm('Clear Telegram settings?')) return;
-  localStorage.removeItem('rm_telegram');
-  ['tg-token','tg-chat-id','tg-filename'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('tg-connection-status').innerHTML = '';
-  showToast('Telegram settings cleared.', 'info');
-}
-function showTelegramSettings() {
-  const s = getTelegramSettings();
-  document.getElementById('tg-token').value = s.token || '8752827492:AAGCTUhooVszWhg89DTWf_ZuWFH4zaujwnk';
-  document.getElementById('tg-chat-id').value = s.chatId || '-1003827965720';
-  document.getElementById('tg-filename').value = s.filename || '';
-  document.getElementById('tg-connection-status').innerHTML = '';
-  new bootstrap.Modal(document.getElementById('telegramSettingsModal')).show();
-}
-async function testTelegramConnection() {
-  const token = document.getElementById('tg-token').value.trim();
-  const chatId = document.getElementById('tg-chat-id').value.trim();
-  if (!token || !chatId) { showToast('Enter Token and Chat ID first.', 'warning'); return; }
-  document.getElementById('tg-connection-status').innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin"></i> Testing...</span>';
-  try {
-    const r = await fetch('https://api.telegram.org/bot'+token+'/sendMessage', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({chat_id:chatId, text:'Connection test successful from HR Recruitment System!'})
-    });
-    const d = await r.json();
-    if (d.ok) {
-      document.getElementById('tg-connection-status').innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> Connected!</span>';
-      showToast('Telegram connection successful!', 'success');
-    } else {
-      document.getElementById('tg-connection-status').innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> '+d.description+'</span>';
-      showToast('Error: '+d.description, 'danger');
-    }
-  } catch(err) {
-    document.getElementById('tg-connection-status').innerHTML = '<span class="text-danger"><i class="fas fa-times-circle"></i> '+err.message+'</span>';
-    showToast('Connection error: '+err.message, 'danger');
-  }
-}
-async function sendFileToTelegram(blob, fileName) {
-  const s = getTelegramSettings();
-  if (!s.token || !s.chatId) { showToast('Configure Telegram settings first.', 'warning'); return false; }
-  try {
-    const fd = new FormData();
-    fd.append('chat_id', s.chatId);
-    fd.append('document', blob, fileName);
-    const r = await fetch('https://api.telegram.org/bot'+s.token+'/sendDocument', {method:'POST', body:fd});
-    const d = await r.json();
-    if (d.ok) { showToast('File sent to Telegram!', 'success'); return true; }
-    else { showToast('Telegram error: '+d.description, 'danger'); return false; }
-  } catch(err) { showToast('Error sending: '+err.message, 'danger'); return false; }
-}
-function promptSendToTelegram(blob, fileName) {
-  const s = getTelegramSettings();
-  if (!s.token || !s.chatId) {
-    if (confirm('Telegram not configured. Open settings?')) showTelegramSettings();
-    return;
-  }
-  document.getElementById('telegram-send-message').textContent = 'Send "'+fileName+'" to Telegram?';
-  document.getElementById('telegram-send-btn').onclick = async function() {
-    bootstrap.Modal.getInstance(document.getElementById('telegramSendModal')).hide();
-    await sendFileToTelegram(blob, fileName);
-  };
-  new bootstrap.Modal(document.getElementById('telegramSendModal')).show();
-}
 // ============= LOCAL STORAGE HELPERS =============
-function saveData() {
+function saveLocal() {
   localStorage.setItem('rm_candidates', JSON.stringify(candidates));
   localStorage.setItem('rm_deleted_ids', JSON.stringify(deletedIds));
-  syncCandidatesToCloud().then(function(pushed) {
-    if (pushed) setCloudStatus(true, 'Saved & synced');
-  }).catch(function(e) {
-    console.log('Cloud sync error:', e.message);
-  });
+}
+function saveData() {
+  saveLocal();
+  pushAllToFirebase();
+  syncAllToGsheet();
 }
 function addAuditLog(action, details) {
   auditLogs.unshift({id:Date.now(), date:new Date().toISOString(), user:currentUser?currentUser.username:'system', action, details, ip:navigator.userAgent});
@@ -2522,41 +1987,73 @@ function togglePasswordVisibility() {
   if (p.type==='password') { p.type='text'; i.className='fas fa-eye-slash'; }
   else { p.type='password'; i.className='fas fa-eye'; }
 }
+function emergencyLogin() {
+  if (!users.some(u => u.username === 'admin')) {
+    users.push({id:1,username:'admin',fullname:'Administrator',email:'admin@hr.com',role:'Admin',password:'admin123',created:new Date().toISOString().split('T')[0]});
+    localStorage.setItem('rm_users', JSON.stringify(users));
+  }
+  generateSessionToken();
+  localStorage.setItem('rm_login_time', Date.now().toString());
+  document.getElementById('login-screen').classList.add('d-none');
+  document.getElementById('main-app').classList.remove('d-none');
+  addAuditLog('Login', 'User admin logged in (emergency)');
+  updateClock(); loadDashboard(); loadRecords();
+  initFirebase();
+  testGsheetConnection().then(function(ok){ if (ok) loadFromGsheet(); });
+}
 document.getElementById('login-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  const btn = document.getElementById('login-btn');
-  const errorEl = document.getElementById('login-error');
-  const errorText = document.getElementById('login-error-text');
-  errorEl.style.display = 'none';
-  btn.disabled = true;
-  document.getElementById('login-btn-text').style.display = 'none';
-  document.getElementById('login-btn-loader').style.display = 'inline';
-  setTimeout(function() {
-    const u = document.getElementById('username').value.trim();
-    const p = document.getElementById('password').value;
-    if (u==='admin' && p==='admin123') {
-      resetLoginBtn();
-      generateSessionToken();
-      localStorage.setItem('rm_login_time', Date.now().toString());
-      document.getElementById('login-screen').style.opacity = '0';
-      document.getElementById('login-screen').style.transition = 'opacity 0.4s ease';
-      setTimeout(function() {
-        document.getElementById('login-screen').classList.add('d-none');
-        document.getElementById('login-screen').style.opacity = '';
-        document.getElementById('login-screen').style.transition = '';
-        document.getElementById('main-app').classList.remove('d-none');
-        addAuditLog('Login', 'User admin logged in');
-        updateClock(); loadDashboard(); loadRecords();
-        testCloudConnection();
-      }, 400);
-    } else {
-      resetLoginBtn();
-      errorText.textContent = 'Invalid username or password. Please try again.';
-      errorEl.style.display = 'flex';
-      document.getElementById('password').value = '';
-      document.getElementById('password').focus();
+  try {
+    const btn = document.getElementById('login-btn');
+    const errorEl = document.getElementById('login-error');
+    const errorText = document.getElementById('login-error-text');
+    errorEl.style.display = 'none';
+    btn.disabled = true;
+    document.getElementById('login-btn-text').style.display = 'none';
+    document.getElementById('login-btn-loader').style.display = 'inline';
+    // ensure admin user in localStorage
+    if (!users.some(u => u.username === 'admin')) {
+      users.push({id:1,username:'admin',fullname:'Administrator',email:'admin@hr.com',role:'Admin',password:'admin123',created:new Date().toISOString().split('T')[0]});
+      localStorage.setItem('rm_users', JSON.stringify(users));
     }
-  }, 800);
+    setTimeout(function() {
+      try {
+        const u = document.getElementById('username').value.trim();
+        const p = document.getElementById('password').value;
+        if (u==='admin' && p==='admin123') {
+          resetLoginBtn();
+          generateSessionToken();
+          localStorage.setItem('rm_login_time', Date.now().toString());
+          document.getElementById('login-screen').style.opacity = '0';
+          document.getElementById('login-screen').style.transition = 'opacity 0.4s ease';
+          setTimeout(function() {
+            document.getElementById('login-screen').classList.add('d-none');
+            document.getElementById('login-screen').style.opacity = '';
+            document.getElementById('login-screen').style.transition = '';
+            document.getElementById('main-app').classList.remove('d-none');
+            addAuditLog('Login', 'User admin logged in');
+            updateClock(); loadDashboard(); loadRecords();
+            initFirebase();
+            testGsheetConnection().then(function(ok){ if (ok) loadFromGsheet(); });
+          }, 400);
+        } else {
+          resetLoginBtn();
+          errorText.textContent = 'Invalid username or password. Please try again.';
+          errorEl.style.display = 'flex';
+          document.getElementById('password').value = '';
+          document.getElementById('password').focus();
+        }
+      } catch(innerErr) {
+        console.error('Login check error:', innerErr);
+        resetLoginBtn();
+        errorText.textContent = 'Login error: ' + innerErr.message;
+        errorEl.style.display = 'flex';
+      }
+    }, 800);
+  } catch(outerErr) {
+    console.error('Login handler error:', outerErr);
+    resetLoginBtn();
+  }
 });
 function logout() {
   if (!confirm('Are you sure you want to logout?')) return;
@@ -2581,7 +2078,6 @@ function navigateTo(page) {
   if (page==='dashboard') loadDashboard();
   if (page==='records') loadRecords();
   if (page==='calendar') renderCalendar();
-  if (page==='analytics') { setTimeout(renderAnalyticsCharts, 200); }
   if (page==='documents') { loadDocuments(); renderDocuments(); updateDocumentStats(); }
 
 }
@@ -2604,7 +2100,7 @@ function applyDayMode() {
 }
 // ============= TOAST =============
 function showToast(msg, type) {
-  const c = document.querySelector('.toast-container');
+  const c = document.getElementById('toast-container');
   const t = document.createElement('div');
   t.className = 'toast align-items-center text-bg-'+(type||'primary')+' border-0 show';
   t.role = 'alert';
@@ -2679,7 +2175,7 @@ function handleAddSubmit(e) {
   };
   candidates.unshift(c); saveData();
   addAuditLog('Add Candidate','Added '+c.name+' for '+c.position);
-  triggerN8nAutomation(N8N_EVENTS.CANDIDATE_ADDED, c.id);
+  sendTelegram('<b>' + esc(c.name) + '</b> added for <b>' + esc(c.position) + '</b>\nStage: ' + c.stage + ' | Status: ' + c.status + '\nBy: ' + (currentUser?.fullname || 'admin'));
   showToast('Candidate added successfully!','success');
   document.getElementById('candidate-form').reset();
   document.getElementById('form-cv-pdf-name').textContent = '';
@@ -2728,12 +2224,12 @@ function handleModalSubmit(e) {
   };
   if (id) {
     const idx = candidates.findIndex(c => c.id==id);
-    if (idx>=0) { Object.assign(candidates[idx], data); addAuditLog('Edit Candidate','Edited '+data.name); triggerN8nAutomation(N8N_EVENTS.CANDIDATE_UPDATED, id); showToast('Candidate updated!','success'); }
+    if (idx>=0) { Object.assign(candidates[idx], data); addAuditLog('Edit Candidate','Edited '+data.name); showToast('Candidate updated!','success'); }
   } else {
     data.id=Date.now(); data.createdAt=new Date().toISOString(); data.interviewHistory=[];
     candidates.unshift(data);
     addAuditLog('Add Candidate','Added '+data.name);
-    triggerN8nAutomation(N8N_EVENTS.CANDIDATE_ADDED, data.id);
+    sendTelegram('<b>' + esc(data.name) + '</b> added for <b>' + esc(data.position) + '</b>\nStage: ' + data.stage + ' | Status: ' + data.status + '\nBy: ' + (currentUser?.fullname || 'admin'));
     showToast('Candidate added!','success');
   }
   saveData();
@@ -2756,27 +2252,48 @@ function editCandidate(id) {
   new bootstrap.Modal(document.getElementById('recordModal')).show();
 }
 function deleteCandidate(id) {
-  if (!confirm('Delete this candidate record?')) return;
-  try {
-    var idx = -1;
-    for (var i = 0; i < candidates.length; i++) {
-      if (candidates[i].id === id) { idx = i; break; }
+  showConfirmDialog('Delete this candidate record? This also removes it from Google Sheets and Drive.', function() {
+    try {
+      var idx = -1;
+      for (var i = 0; i < candidates.length; i++) {
+        if (candidates[i].id === id) { idx = i; break; }
+      }
+      if (idx === -1) { showToast('Candidate not found.', 'warning'); return; }
+      var c = candidates[idx];
+      candidates.splice(idx, 1);
+      if (deletedIds.indexOf(id) === -1) deletedIds.push(id);
+      gsheetRequest('delete', { id: id });
+      _gsheetKnownIds.delete(Number(id));
+      saveData();
+      addAuditLog('Delete Candidate','Deleted '+(c?c.name:'ID: '+id));
+      if (c) sendTelegram('<b>' + esc(c.name) + '</b> deleted (' + esc(c.position) + ')\nBy: ' + (currentUser?.fullname || 'admin'));
+      showToast('Candidate deleted.','info');
+      loadRecords();
+    } catch(e) {
+      console.error('deleteCandidate error:', e);
+      showToast('Error deleting candidate: ' + e.message, 'danger');
     }
-    if (idx === -1) { showToast('Candidate not found.', 'warning'); return; }
-    var c = candidates[idx];
-    candidates.splice(idx, 1);
-    if (deletedIds.indexOf(id) === -1) deletedIds.push(id);
-    saveData();
-    addAuditLog('Delete Candidate','Deleted '+(c?c.name:'ID: '+id));
-    showToast('Candidate deleted.','info');
-    loadRecords();
-    setTimeout(function() { triggerN8nAutomation('candidate.deleted', id); }, 100);
-  } catch(e) {
-    console.error('deleteCandidate error:', e);
-    showToast('Error deleting candidate: ' + e.message, 'danger');
-  }
+  }, { title: 'Delete Candidate', yesLabel: 'Delete' });
 }
 function viewCandidate(id) { showToast('Viewing candidate details in table.','info'); }
+function showConfirmDialog(message, onConfirm, opts) {
+  opts = opts || {};
+  const modalEl = document.getElementById('confirmModal');
+  document.getElementById('confirmModalTitle').textContent = opts.title || 'Are you sure?';
+  document.getElementById('confirmModalBody').textContent = message;
+  const yesBtn = document.getElementById('confirmModalYes');
+  yesBtn.textContent = (opts.yesLabel || 'Confirm');
+  const handler = function() {
+    modalEl.removeEventListener('hidden.bs.modal', cleanup);
+    if (typeof onConfirm === 'function') onConfirm();
+  };
+  const cleanup = function() {
+    yesBtn.removeEventListener('click', handler);
+  };
+  yesBtn.addEventListener('click', handler);
+  modalEl.addEventListener('hidden.bs.modal', cleanup);
+  new bootstrap.Modal(modalEl).show();
+}
 // ============= RECORDS =============
 function loadRecords() {
   const data = [...filterData()].sort(sortByTime);
@@ -2787,7 +2304,7 @@ function loadRecords() {
     const roundsCount = hx.length;
     const roundsLabel = roundsCount ? '<span class="badge bg-dark" title="'+roundsCount+' completed round(s)">'+roundsCount+'</span>' : '<span class="text-muted">0</span>';
     html += '<tr><td>'+(i+1)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.position)+'</td><td>'+esc(c.department)+'</td><td>'+(c.interviewDate||'')+'</td><td>'+(c.interviewTime||'')+'</td><td>'+esc(c.stage)+'</td><td class="text-center">'+roundsLabel+'</td><td>'+(c.cvLink?'<a href="'+esc(c.cvLink)+'" target="_blank"><i class="fas fa-external-link-alt"></i></a>':'')+'</td>';
-    html += '<td class="text-center">'+(c.cvPdfData?'<button class="btn btn-sm btn-outline-danger" onclick="previewPDF('+c.id+')" title="Preview PDF"><i class="fas fa-file-pdf"></i></button>':'<span class="text-muted">--</span>')+'</td>';
+    html += '<td class="text-center">'+(c.cvPdfData?'<button class="btn btn-sm btn-outline-danger" onclick="previewPDF('+c.id+')" title="Preview PDF"><i class="fas fa-file-pdf"></i></button>':'<span class="text-muted">--</span>')+(c.cvDriveUrl?' <a class="btn btn-sm btn-outline-success" href="'+esc(c.cvDriveUrl)+'" target="_blank" title="View on Drive"><i class="fas fa-cloud"></i></a>':'')+'</td>';
     html += '<td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" onclick="editCandidate('+c.id+')" title="Edit"><i class="fas fa-edit"></i></button><button class="btn btn-outline-info" onclick="showInterviewDetails('+c.id+')" title="View History"><i class="fas fa-history"></i></button><button class="btn btn-outline-danger" onclick="deleteCandidate('+c.id+')" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>';
   });
   document.querySelector('#records-table tbody').innerHTML = html||'<tr><td colspan="11" class="text-center text-muted">No records found</td></tr>';
@@ -2859,7 +2376,7 @@ function exportToExcel() {
   const fn = 'Recruitment_Report_'+new Date().toISOString().split('T')[0]+'.xlsx';
   saveAs(blob, fn);
   addAuditLog('Export Excel','Exported '+candidates.length+' records');
-  promptSendToTelegram(blob, fn);
+  if (confirm('Send this Excel file to Telegram?')) sendTelegramFile(blob, fn, 'Excel report: ' + candidates.length + ' candidates');
 }
 function exportJSON() {
   if (!candidates.length) { showToast('No data to export.','warning'); return; }
@@ -2868,7 +2385,7 @@ function exportJSON() {
   const fn = 'Recruitment_Data_'+new Date().toISOString().split('T')[0]+'.json';
   saveAs(blob, fn);
   addAuditLog('Export JSON','Exported '+candidates.length+' records');
-  promptSendToTelegram(blob, fn);
+  if (confirm('Send this JSON file to Telegram?')) sendTelegramFile(blob, fn, 'JSON export: ' + candidates.length + ' candidates');
 }
 function showPDFDateModal() {
   const modalEl = document.getElementById('pdfDateModal');
@@ -3014,7 +2531,6 @@ function exportInterviewSchedule() {
   const fn = 'Interview_Schedule_'+new Date().toISOString().split('T')[0]+'.xlsx';
   saveAs(blob, fn);
   addAuditLog('Export Schedule','Exported interview schedule');
-  promptSendToTelegram(blob, fn);
 }
 function importFromExcel(event) {
   const file = event.target.files[0];
@@ -3075,24 +2591,43 @@ async function importJSON(event) {
   event.target.value='';
 }
 function resetAllData() {
-  try {
-    if (!confirm('WARNING: Delete ALL candidate data and documents?')) return;
-    if (!confirm('Final confirmation: cannot be undone!')) return;
-    candidates.forEach(function(c) {
-      if (c.id && deletedIds.indexOf(c.id) === -1) deletedIds.push(c.id);
-    });
-    candidates=[]; saveData();
-    _documents=[]; saveDocuments();
-    showToast('All data cleared.','info');
-    addAuditLog('Reset Data','All candidate data was cleared');
-    loadRecords(); loadDashboard();
-    try { renderAllCandidatesSummary(); } catch(e) { console.log('renderAllCandidatesSummary error:', e); }
-    if (document.getElementById('page-calendar') && !document.getElementById('page-calendar').classList.contains('d-none')) renderCalendar();
-    renderDocuments();
-  } catch(e) {
-    console.error('resetAllData error:', e);
-    showToast('Error: ' + e.message, 'danger');
-  }
+  showConfirmDialog('WARNING: This permanently deletes ALL candidate data and documents from this system, Google Sheets, and Drive. This cannot be undone.', function() {
+    try {
+      const idsToDelete = new Set();
+      candidates.forEach(function(c) { if (c.id) idsToDelete.add(Number(c.id)); });
+      _gsheetKnownIds.forEach(function(id) { idsToDelete.add(Number(id)); });
+      candidates.forEach(function(c) {
+        if (c.id && deletedIds.indexOf(c.id) === -1) deletedIds.push(c.id);
+      });
+      candidates=[]; saveData();
+      _documents=[]; saveDocuments();
+      (async function() {
+        for (const id of idsToDelete) {
+          await gsheetRequest('delete', { id: id });
+        }
+        _gsheetKnownIds = new Set();
+      })();
+      if (_cloudDbEnabled && _firestore) {
+        const col = _firestore.collection(_FIREBASE_CONFIG.collection);
+        idsToDelete.forEach(id => {
+          col.doc('candidate_' + id).delete().catch(function(){});
+        });
+      }
+      if (!users.some(u => u.username === 'admin')) {
+        users.push({id:1,username:'admin',fullname:'Administrator',email:'admin@hr.com',role:'Admin',password:'admin123',created:new Date().toISOString().split('T')[0]});
+        localStorage.setItem('rm_users', JSON.stringify(users));
+      }
+      showToast('All data cleared. Admin login: admin / admin123','info');
+      addAuditLog('Reset Data','All candidate data was cleared');
+      loadRecords(); loadDashboard();
+      try { renderAllCandidatesSummary(); } catch(e) { console.log('renderAllCandidatesSummary error:', e); }
+      if (document.getElementById('page-calendar') && !document.getElementById('page-calendar').classList.contains('d-none')) renderCalendar();
+      renderDocuments();
+    } catch(e) {
+      console.error('resetAllData error:', e);
+      showToast('Error: ' + e.message, 'danger');
+    }
+  }, { title: 'Reset All Data', yesLabel: 'Delete Everything' });
 }
 // ============= FILE SAVE HELPER =============
 function saveAs(blob, filename) {
@@ -3327,7 +2862,7 @@ function showInterviewDetails(id) {
     });
   html += '</div>';
   container.innerHTML = html;
-}
+  }
   updateCalendarSummary(id);
   new bootstrap.Modal(document.getElementById('interviewDetailsModal')).show();
 }
@@ -3672,7 +3207,6 @@ function handleRescheduleSubmit(e) {
   }
   saveData();
   addAuditLog('Reschedule Interview','Rescheduled '+c.name+' to '+c.stage+' on '+c.interviewDate);
-  triggerN8nAutomation(N8N_EVENTS.INTERVIEW_RESCHEDULED, c.id);
   bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
   showToast('Interview rescheduled!','success');
   if (document.getElementById('page-calendar')&&!document.getElementById('page-calendar').classList.contains('d-none')) renderCalendar();
@@ -3690,57 +3224,320 @@ function updateClock() {
   el.textContent = now.toLocaleDateString('en-US', opts);
 }
 setInterval(updateClock, 1000);
-async function forceSync() {
-  showToast('Syncing...', 'info');
-  var url = getWebAppUrl();
-  if (!url) { showToast('Cloud URL not configured. Set it in Cloud Settings.', 'warning'); return; }
-  const pushed = await syncCandidatesToCloud();
-  console.log('Push result:', pushed, '| candidates.length:', candidates.length);
-  const pulled = await syncCandidatesFromCloud();
-  console.log('Pull result:', pulled);
-  if (pushed && !pulled) showToast('Data pushed to cloud (no new data from cloud)', 'success');
-  else if (!pushed && pulled) showToast('Data pulled from cloud (push skipped or no local data)', 'success');
-  else if (pushed && pulled) showToast('Full sync completed!', 'success');
-  else {
-    if (candidates.length === 0) showToast('No local data to push, and could not pull from cloud.', 'warning');
-    else showToast('Sync failed. Check Cloud Settings or console (F12) for details.', 'danger');
+// ============= FIREBASE CLOUD SYNC (hardcoded) =============
+const _FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBxmhx7wRReWw5x7UfLO1n3OK9JfAMnsTw",
+  projectId: "recruitmen-2cc3d",
+  appId: "1:664767825491:web:4751ab61e73216d55828a6",
+  collection: "recruitment_data"
+};
+const _TELEGRAM_BOT_TOKEN = '8752827492:AAGCTUhooVszWhg89DTWf_ZuWFH4zaujwnk';
+const _TELEGRAM_CHAT_ID = '-1003827965720';
+
+// ============= GOOGLE SHEETS DATABASE (Apps Script Web App) =============
+// Replace with the Web App URL from: Google Sheet > Extensions > Apps Script > Deploy > New deployment > Web app
+const _GSHEET_URL = 'https://script.google.com/macros/s/AKfycbyDsuhmQzNFO3s-471wtqxZn4JHktqqGJMpk2db8YHfAypDRKT4P10zneHI8FwKlUdjzA/exec';
+
+let _gsheetEnabled = false;
+let _gsheetKnownIds = new Set();
+let _gsheetSyncTimer = null;
+let _gsheetPulling = false;
+
+function isGsheetConfigured() {
+  return _GSHEET_URL && _GSHEET_URL.indexOf('YOUR_APPS_SCRIPT') === -1;
+}
+
+async function testGsheetConnection() {
+  if (!isGsheetConfigured()) {
+    console.warn('Google Sheets URL not configured yet. See instructions in index.html header.');
+    return false;
   }
-  if (pushed || pulled) loadRecords();
+  try {
+    const res = await fetch(_GSHEET_URL + '?action=ping', { method: 'GET' });
+    const data = await res.json();
+    _gsheetEnabled = !!(data && data.ok);
+    if (!_gsheetEnabled) console.warn('Google Sheets returned:', data);
+    return _gsheetEnabled;
+  } catch (e) {
+    console.error('Google Sheets connection test failed:', e);
+    _gsheetEnabled = false;
+    return false;
+  }
 }
 
-// ============= AUTO-SYNC TIMER =============
-let _autoSyncTimer = null;
-function startAutoSyncFromSheet() {
-  stopAutoSyncFromSheet();
-  if (!getWebAppUrl() && !PUBLISHED_SHEET_CSV) return;
-  _autoSyncTimer = setInterval(async () => {
-    try { await syncCandidatesFromCloud(); }
-    catch(e) { console.log('Auto-sync error:', e.message); }
-  }, 10000);
-}
-function stopAutoSyncFromSheet() {
-  if (_autoSyncTimer) { clearInterval(_autoSyncTimer); _autoSyncTimer = null; }
+async function gsheetRequest(action, data) {
+  if (!isGsheetConfigured()) return null;
+  try {
+    const res = await fetch(_GSHEET_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, data: data || {} })
+    });
+    const json = await res.json();
+    if (!json.ok) console.error('Google Sheets action failed:', action, json.error);
+    return json;
+  } catch (e) {
+    console.error('Google Sheets request error:', e);
+    return null;
+  }
 }
 
-// ============= AUTO INIT — IMMEDIATE SYNC, NO MANUAL STEPS =============
+async function loadFromGsheet() {
+  if (!isGsheetConfigured() || _gsheetPulling) return;
+  _gsheetPulling = true;
+  try {
+    const res = await fetch(_GSHEET_URL);
+    const rows = await res.json();
+    if (!Array.isArray(rows)) { console.warn('Google Sheets returned unexpected data:', rows); return; }
+    if (rows.length) {
+      const existing = {};
+      candidates.forEach(function(c) { existing[Number(c.id)] = c; });
+      candidates.length = 0;
+      rows.forEach(function(r) {
+        if (!r.interviewHistory) r.interviewHistory = [];
+        if (r.id) r.id = Number(r.id);
+        const old = existing[Number(r.id)];
+        if (old) {
+          if (!r.cvPdfData && old.cvPdfData) { r.cvPdfData = old.cvPdfData; r.cvPdfName = old.cvPdfName; }
+          if (!r.remarks && old.remarks) r.remarks = old.remarks;
+        }
+        candidates.push(r);
+      });
+      saveLocal();
+      _gsheetKnownIds = new Set(candidates.map(function(c) { return Number(c.id); }));
+      showToast('Loaded ' + rows.length + ' records from Google Sheets', 'success');
+    } else {
+      _gsheetKnownIds = new Set();
+      console.log('Google Sheets is empty. First save from the system will create records.');
+    }
+    loadDashboard(); loadRecords(); renderDocuments();
+  } catch (e) {
+    console.error('Load from Google Sheets error:', e);
+  } finally {
+    _gsheetPulling = false;
+  }
+}
+
+function syncAllToGsheet() {
+  if (!isGsheetConfigured()) return;
+  if (_gsheetSyncTimer) clearTimeout(_gsheetSyncTimer);
+  _gsheetSyncTimer = setTimeout(async function() {
+    try {
+      const currentIds = new Set();
+      for (const c of candidates) {
+        const id = Number(c.id);
+        if (!id) continue;
+        currentIds.add(id);
+        const action = _gsheetKnownIds.has(id) ? 'update' : 'add';
+        const send = Object.assign({}, c);
+        if (c.cvDriveId) {
+          delete send.cvPdfData;
+        }
+        const resp = await gsheetRequest(action, send);
+        if (resp && resp.ok) {
+          if (resp.cvError) {
+            console.warn('Google Sheets:', resp.cvError);
+            showToast('Saved, but CV upload to Drive needs fixing: ' + resp.cvError.slice(0, 120), 'warning');
+          }
+          if (resp.cvDriveId) {
+            c.cvDriveId = resp.cvDriveId;
+            c.cvDriveUrl = resp.cvDriveUrl;
+            c.cvDrivePreview = resp.cvDrivePreview;
+            saveLocal();
+          }
+        } else {
+          console.warn('Google Sheets sync failed for record', id, resp);
+        }
+        _gsheetKnownIds.add(id);
+      }
+      const toDelete = [];
+      _gsheetKnownIds.forEach(function(id) {
+        if (!currentIds.has(id)) toDelete.push(id);
+      });
+      for (const id of toDelete) {
+        await gsheetRequest('delete', { id: id });
+        _gsheetKnownIds.delete(id);
+      }
+      console.log('Google Sheets sync complete. Synced:', currentIds.size);
+    } catch (e) {
+      console.error('Google Sheets sync failed:', e);
+    }
+  }, 600);
+}
+
+async function syncGsheetNow() {
+  const ok = await testGsheetConnection();
+  if (!ok) {
+    showToast('Google Sheets not configured or unreachable. Paste your Web App URL into _GSHEET_URL.', 'warning');
+    return;
+  }
+  showToast('Testing Google Sheets connection...', 'info');
+  await loadFromGsheet();
+  syncAllToGsheet();
+  showToast('Google Sheets sync triggered.', 'success');
+}
+
+let _firebaseApp = null, _firestore = null, _cloudDbEnabled = false, _firebaseUnsubscribe = null, _firebaseSyncing = false, _firebaseDebounceTimer = null, _syncInterval = null, _pulling = false;
+
+function sendTelegram(msg) {
+  fetch('https://api.telegram.org/bot' + _TELEGRAM_BOT_TOKEN + '/sendMessage', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:_TELEGRAM_CHAT_ID, text:msg, parse_mode:'HTML'})
+  }).catch(function(e){console.error('Telegram send error:',e)});
+}
+function sendTelegramFile(blob, filename, caption) {
+  var fd = new FormData();
+  fd.append('chat_id', _TELEGRAM_CHAT_ID);
+  fd.append('document', blob, filename);
+  fd.append('caption', caption || filename);
+  fetch('https://api.telegram.org/bot' + _TELEGRAM_BOT_TOKEN + '/sendDocument', { method:'POST', body:fd })
+  .then(function(r){return r.json()}).then(function(d){
+    showToast(d.ok ? 'File sent to Telegram: ' + filename : 'Telegram error: ' + (d.description || 'unknown'), d.ok ? 'success' : 'danger');
+  }).catch(function(e){
+    showToast('Telegram upload failed', 'danger');
+    console.error('Telegram file send error:',e);
+  });
+}
+
+function showSyncToast(msg) {
+  const c = document.getElementById('toast-container');
+  if (!c) return;
+  const t = document.createElement('div');
+  t.className = 'toast align-items-center text-bg-info border-0 show';
+  t.innerHTML = `<div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+  c.appendChild(t);
+  setTimeout(() => { t.remove(); }, 6000);
+}
+function setCloudBadge(color, text) {
+  const b = document.getElementById('cloud-status-badge');
+  const t = document.getElementById('cloud-status-text');
+  if (!b || !t) return;
+  b.style.display = 'inline-block';
+  b.style.background = color || '#22c55e';
+  t.textContent = text || 'Live';
+}
+
+async function initFirebase() {
+  try {
+    if (typeof firebase === 'undefined') { console.error('Firebase SDK not loaded'); setCloudBadge('#ef4444', 'No SDK'); return false; }
+    _firebaseApp = firebase.initializeApp({
+      apiKey: _FIREBASE_CONFIG.apiKey,
+      projectId: _FIREBASE_CONFIG.projectId,
+      appId: _FIREBASE_CONFIG.appId
+    }, 'rms-app');
+    _firestore = firebase.firestore(_firebaseApp);
+    _cloudDbEnabled = true;
+    await _firestore.collection(_FIREBASE_CONFIG.collection).limit(1).get();
+    setCloudBadge('#22c55e', 'Live');
+    listenForCloudChanges();
+    await pullFromFirebase();
+    if (_syncInterval) clearInterval(_syncInterval);
+    _syncInterval = setInterval(pullFromFirebase, 15000);
+    console.log('Firebase init OK');
+    return true;
+  } catch (e) {
+    console.error('Firebase init error:', e);
+    _cloudDbEnabled = false;
+    setCloudBadge('#ef4444', e.message?.slice(0,30) || 'Error');
+    return false;
+  }
+}
+
+function pushAllToFirebase() {
+  if (!_cloudDbEnabled || !_firestore) return;
+  if (_firebaseDebounceTimer) clearTimeout(_firebaseDebounceTimer);
+  _firebaseDebounceTimer = setTimeout(pushToFirestore, 500);
+}
+
+async function pushToFirestore() {
+  if (_firebaseSyncing) { _firebaseDebounceTimer = setTimeout(pushToFirestore, 500); return; }
+  _firebaseSyncing = true;
+  setCloudBadge('#0ea5e9', 'Sync→');
+  try {
+    const col = _firestore.collection(_FIREBASE_CONFIG.collection);
+    const batch = _firestore.batch();
+    candidates.forEach(c => { batch.set(col.doc(`candidate_${c.id}`), JSON.parse(JSON.stringify(c))); });
+    batch.set(col.doc('_metadata'), { type:'metadata', deletedIds, updatedAt: new Date().toISOString() });
+    batch.set(col.doc('_documents'), { type:'documents', items:_documents, updatedAt: new Date().toISOString() });
+    await batch.commit();
+    setCloudBadge('#22c55e', 'Live');
+    console.log('Push OK, docs:', candidates.length);
+  } catch(e) {
+    console.error('Firebase push error:', e);
+    setCloudBadge('#ef4444', 'PushFail');
+  } finally { _firebaseSyncing = false; }
+}
+
+async function pullFromFirebase() {
+  if (!_cloudDbEnabled || !_firestore || _firebaseSyncing || _pulling) return;
+  _pulling = true;
+  setCloudBadge('#0ea5e9', 'Pull←');
+  try {
+    const snap = await _firestore.collection(_FIREBASE_CONFIG.collection).get();
+    if (snap.empty) { setCloudBadge('#22c55e', 'Live'); return; }
+    let changed = false, remoteCandidates = [], remoteDocuments = null, remoteDeletedIds = deletedIds.slice();
+    snap.forEach(doc => {
+      const id = doc.id, data = doc.data();
+      if (!data) return;
+      if (id === '_metadata') { if (data.deletedIds) remoteDeletedIds = data.deletedIds; return; }
+      if (id === '_documents') { if (data.items) remoteDocuments = data.items; return; }
+      if (id.startsWith('candidate_')) remoteCandidates.push(data);
+    });
+    if (remoteDocuments && JSON.stringify(_documents) !== JSON.stringify(remoteDocuments)) {
+      _documents = remoteDocuments; localStorage.setItem('rm_documents', JSON.stringify(_documents)); changed = true;
+    }
+    remoteCandidates.forEach(rc => {
+      const i = candidates.findIndex(lc => lc.id === rc.id);
+      if (i === -1) { candidates.push(rc); changed = true; }
+      else if (JSON.stringify(candidates[i]) !== JSON.stringify(rc)) { candidates[i] = rc; changed = true; }
+    });
+    const mergedDel = [...new Set([...deletedIds, ...remoteDeletedIds])];
+    const before = candidates.length;
+    candidates = candidates.filter(c => !mergedDel.includes(c.id));
+    if (candidates.length !== before) changed = true;
+    deletedIds = mergedDel;
+    if (changed) { saveLocal(); loadDashboard(); loadRecords(); renderDocuments(); console.log('Pull applied, local count:', candidates.length); showSyncToast('Sync: ' + remoteCandidates.length + ' candidates loaded'); }
+    setCloudBadge('#22c55e', 'Live');
+    console.log('Pull complete, local count:', candidates.length);
+  } catch(e) {
+    console.error('Firebase pull error:', e);
+    setCloudBadge('#ef4444', 'PullFail');
+  } finally { _pulling = false; }
+}
+
+function listenForCloudChanges() {
+  if (_firebaseUnsubscribe) { _firebaseUnsubscribe(); _firebaseUnsubscribe = null; }
+  _firebaseUnsubscribe = _firestore.collection(_FIREBASE_CONFIG.collection).onSnapshot(s => {
+    if (_firebaseSyncing || _pulling) return;
+    console.log('Snapshot received, docs:', s.docs.length);
+    let changed = false, remoteCandidates = [], remoteDocuments = null;
+    let remoteDeletedIds = deletedIds.slice();
+    s.forEach(doc => {
+      const id = doc.id, data = doc.data();
+      if (!data) return;
+      if (id === '_metadata') { if (data.deletedIds) remoteDeletedIds = data.deletedIds; return; }
+      if (id === '_documents') { if (data.items) remoteDocuments = data.items; return; }
+      if (id.startsWith('candidate_')) remoteCandidates.push(data);
+    });
+    if (remoteDocuments && JSON.stringify(_documents) !== JSON.stringify(remoteDocuments)) {
+      _documents = remoteDocuments; localStorage.setItem('rm_documents', JSON.stringify(_documents)); changed = true;
+    }
+    remoteCandidates.forEach(rc => {
+      const i = candidates.findIndex(lc => lc.id === rc.id);
+      if (i === -1) { candidates.push(rc); changed = true; console.log('New candidate from cloud:', rc.name, rc.id); }
+      else if (JSON.stringify(candidates[i]) !== JSON.stringify(rc)) { candidates[i] = rc; changed = true; console.log('Updated candidate from cloud:', rc.name, rc.id); }
+    });
+    const mergedDel = [...new Set([...deletedIds, ...remoteDeletedIds])];
+    const before = candidates.length;
+    candidates = candidates.filter(c => !mergedDel.includes(c.id));
+    if (candidates.length !== before) changed = true;
+    deletedIds = mergedDel;
+    if (changed) { saveLocal(); loadDashboard(); loadRecords(); renderDocuments(); console.log('Live sync applied, local count:', candidates.length); showSyncToast('Sync received: ' + remoteCandidates.length + ' candidates'); }
+  }, e => { console.error('Firestore listener error:', e); setCloudBadge('#ef4444', 'Offline'); });
+}
+
+// ============= AUTO INIT =============
 document.getElementById('username').focus();
-_cloudDbEnabled = true;
-
-function startPeriodicPush() {
-  setInterval(async function() {
-    try { await syncCandidatesToCloud(); }
-    catch(e) { console.log('Periodic push error:', e.message); }
-  }, 30000);
-}
-
-setTimeout(async function() {
-  setCloudStatus(false, 'Connecting...');
-  await syncCandidatesFromCloud();
-  startAutoSyncFromSheet();
-  startPeriodicPush();
-  await syncCandidatesToCloud();
-  testCloudConnection();
-}, 500);
     </script>
 
     <script>
@@ -3779,6 +3576,30 @@ setTimeout(async function() {
             });
             document.getElementById('pdf-download-btn').onclick = function() {
                 if (confirm('Do you want to download this file?')) { downloadPDF(id); }
+            };
+            new bootstrap.Modal(document.getElementById('pdfPreviewModal')).show();
+            document.getElementById('pdfPreviewModal').addEventListener('hidden.bs.modal', function() { URL.revokeObjectURL(url); pdfDoc = null; pdfViewportElement = null; }, { once: true });
+        }
+
+        function previewPDFDoc(name, url) {
+            currentPreviewId = null;
+            document.getElementById('pdfPreviewLabel').innerHTML = '<i class="fas fa-file-pdf me-2"></i>' + (name || 'document.pdf');
+            document.getElementById('pdf-loading').classList.remove('d-none');
+            document.getElementById('pdf-controls').classList.add('d-none');
+            pdfCanvas = document.getElementById('pdf-canvas');
+            pdfCtx = pdfCanvas.getContext('2d');
+            pdfViewportElement = document.getElementById('pdf-viewport');
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                pdfDoc = pdf; pdfPageNum = 1;
+                pdfFitWidth();
+                document.getElementById('pdf-loading').classList.add('d-none');
+                document.getElementById('pdf-controls').classList.remove('d-none');
+            }).catch(function(err) {
+                document.getElementById('pdf-loading').classList.add('d-none');
+                showToast('Error loading PDF: ' + err.message, 'danger');
+            });
+            document.getElementById('pdf-download-btn').onclick = function() {
+                const a = document.createElement('a'); a.href = url; a.download = name || 'document.pdf'; a.click();
             };
             new bootstrap.Modal(document.getElementById('pdfPreviewModal')).show();
             document.getElementById('pdfPreviewModal').addEventListener('hidden.bs.modal', function() { URL.revokeObjectURL(url); pdfDoc = null; pdfViewportElement = null; }, { once: true });
@@ -3824,69 +3645,6 @@ setTimeout(async function() {
         function pdfZoomOut() { pdfScale = Math.max(pdfScale - 0.25, 0.5); renderPDFPage(pdfPageNum); }
         function pdfFitWidth() { pdfFitToWidth(); }
     </script>
-
-    <!-- TELEGRAM SETTINGS MODAL -->
-    <div class="modal fade" id="telegramSettingsModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fab fa-telegram-plane me-2"></i>Telegram Settings</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="telegram-form" onsubmit="saveTelegramSettings(event)">
-                        <div class="mb-3">
-                            <label class="form-label">Bot Token <span class="text-danger">*</span></label>
-                            <input type="text" id="tg-token" class="form-control" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" required>
-                            <small class="text-muted">Get from <a href="https://t.me/BotFather" target="_blank">@BotFather</a></small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Chat ID <span class="text-danger">*</span></label>
-                            <input type="text" id="tg-chat-id" class="form-control" placeholder="-1001234567890" required>
-                            <small class="text-muted">Channel/group ID (negative for channels)</small>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Default File Name</label>
-                            <input type="text" id="tg-filename" class="form-control" placeholder="Recruitment_Report">
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <button type="button" onclick="testTelegramConnection()" class="btn btn-outline-info me-3">
-                                <i class="fas fa-paper-plane me-1"></i>Test Connection
-                            </button>
-                            <span id="tg-connection-status"></span>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" onclick="clearTelegramSettings()" class="btn btn-outline-danger">Clear Settings</button>
-                    <button type="button" onclick="document.getElementById('telegram-form').requestSubmit()" class="btn btn-orange">Save Settings</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- TELEGRAM SEND CONFIRM MODAL -->
-    <div class="modal fade" id="telegramSendModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fab fa-telegram-plane me-2"></i>Send to Telegram</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <i class="fab fa-telegram-plane fa-4x mb-3" style="color: #0088cc;"></i>
-                    <p id="telegram-send-message">Send this file to Telegram?</p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="telegram-send-btn" class="btn btn-info" style="background: #0088cc; border-color: #0088cc; color: white;">
-                        <i class="fab fa-telegram-plane me-1"></i>Send to Telegram
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- PDF PREVIEW MODAL -->
     <div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-labelledby="pdfPreviewLabel" aria-hidden="true">
