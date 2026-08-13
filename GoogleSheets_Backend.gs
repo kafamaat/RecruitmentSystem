@@ -38,15 +38,14 @@
  *   cvDriveId / cvDriveUrl / cvDrivePreview columns, and the cvDriveOpen
  *   column holds a clickable "Open PDF" hyperlink. Clicking it opens the
  *   full CV from Google Drive - never from script.google.com.
- * - If the Drive upload fails, the record is NOT saved and an error is
- *   returned so the user can retry (no base64 is written into the sheet).
+ * - Safety fallback: if Drive upload is not authorized yet, the record is
+ *   STILL saved to the sheet so no data is lost. The PDF stays as base64 in
+ *   the hidden cvPdfData columns, cvDriveOpen is left empty, and a warning
+ *   is returned. After redeploying with Drive permissions, run the
+ *   "Fix CV Links to Drive" migration (button in the app or
+ *   ?action=backfillopen) to upload those PDFs and write the Drive links.
  * - The sheet is the recruitment CV database; Google Drive is the central
  *   PDF storage.
- * - After deploying, run the one-time migration for older rows whose PDFs
- *   are still stored as base64 in the sheet (cvPdfData_1..N): open the app
- *   and call   ?action=backfillopen   (or run backfillOpenLinks() in the
- *   editor). It uploads those PDFs to Drive, writes the Drive links and
- *   clears the raw base64 columns.
  * - Deleting a candidate also trashes its PDF from Drive (if any).
  * - If you RE-DEPLOY after editing, re-run setup() first so the new columns
  *   are added to the sheet.
@@ -385,30 +384,36 @@ function doPost(e) {
     ensureHeaders(sheet);
     if (action === 'add' || action === 'update') {
       data.id = Number(data.id);
-      // Google Drive is the single source of truth for CV PDFs. If a CV was
-      // uploaded, it MUST be stored in the linked Drive folder before the
-      // record is saved, so the sheet link always points to Drive (never to
-      // this script). On upload failure we abort the save and let the client
-      // surface the error and retry.
+      var cvError = '';
       if (data.cvPdfData && data.cvPdfData !== '') {
         var pdf = processPdf(data);
-        if (!pdf || pdf.error) {
-          return json({
-            ok: false,
-            error: 'CV upload to Google Drive failed, record NOT saved. ' + (pdf && pdf.error ? pdf.error : 'Missing CV data.')
-          });
+        if (pdf && !pdf.error) {
+          data.cvDriveId = pdf.id;
+          data.cvDriveUrl = pdf.url;
+          data.cvDrivePreview = pdf.preview;
+          delete data.cvPdfData; // PDF is on Drive, do not bloat the sheet with base64
+        } else {
+          // Drive upload unavailable (e.g. scopes not authorized yet): the
+          // record is STILL saved so no data is lost. The PDF is kept as
+          // base64 in the hidden sheet columns, and cvDriveOpen stays empty
+          // (it never points to script.google.com). Once Drive is authorized,
+          // the "Fix CV Links to Drive" migration uploads it and writes the
+          // real Drive link.
+          var chunks = splitPdfData(data.cvPdfData || '');
+          if (chunks.length <= PDF_CHUNKS) {
+            cvError = 'CV stored in the sheet only (Google Drive upload not authorized yet). Redeploy the web app with Drive permissions, then run Fix CV Links to Drive. ' + (pdf ? pdf.error : '');
+          } else {
+            cvError = 'PDF too large to keep in the sheet and Drive upload failed: ' + (pdf ? pdf.error : 'unknown error');
+            delete data.cvPdfData;
+          }
         }
-        data.cvDriveId = pdf.id;
-        data.cvDriveUrl = pdf.url;
-        data.cvDrivePreview = pdf.preview;
-        delete data.cvPdfData; // PDF is on Drive, do not bloat the sheet with base64
       }
       if (action === 'add') {
         appendRecord(sheet, data);
       } else {
         updateRecord(sheet, data);
       }
-      return json({ ok: true, id: data.id, cvDriveId: data.cvDriveId || '', cvDriveUrl: data.cvDriveUrl || '', cvDrivePreview: data.cvDrivePreview || '' });
+      return json({ ok: true, id: data.id, cvError: cvError, cvDriveId: data.cvDriveId || '', cvDriveUrl: data.cvDriveUrl || '', cvDrivePreview: data.cvDrivePreview || '' });
     }
     if (action === 'delete') {
       deleteRecord(sheet, data.id);

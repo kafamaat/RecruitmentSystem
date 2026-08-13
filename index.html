@@ -3458,6 +3458,10 @@ function syncAllToGsheet() {
         }
         const resp = await gsheetRequest(action, send);
         if (resp && resp.ok) {
+          if (resp.cvError) {
+            console.warn('Google Sheets:', resp.cvError);
+            showToast('Saved, but CV is not on Drive yet: ' + resp.cvError.slice(0, 130), 'warning');
+          }
           if (resp.cvDriveId) {
             c.cvDriveId = resp.cvDriveId;
             c.cvDriveUrl = resp.cvDriveUrl;
