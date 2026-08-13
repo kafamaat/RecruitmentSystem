@@ -31,35 +31,28 @@
  * 11. Open the app, log in (admin / admin123), click the
  *     "Sync Google Sheets" button in the sidebar.
  *
- * PDF FILES:
- * - Uploaded CVs are stored TWO ways (fully automatic):
- *   1. Preferred: uploaded to your Google Drive folder (the folder
- *      you linked, id: 1E4dpO5w8tlz8nLHPxCPzR35gkATixvFc)
- *      and a view link is stored in the sheet (cvDriveId /
- *      cvDriveUrl / cvDrivePreview). No base64 is written to the
- *      sheet in this case.
- *   2. Fallback: if Drive is not authorized/unavailable, the PDF
- *      base64 is stored DIRECTLY IN THE SHEET, split across the
- *      columns cvPdfData_1 .. cvPdfData_16 (a single cell can only
- *      hold 50,000 chars, so large PDFs are chunked; max ~570KB).
- *      These columns are auto-hidden so the sheet stays readable.
- *      The PDF is rebuilt automatically when records are loaded.
- * - Either way, the "cvDriveOpen" column shows a clickable link:
- *   "Open PDF" (opens the file on Google Drive) or "Review PDF"
- *   (built-in viewer served by this web app). Clicking "Open PDF"
- *   opens Google Drive's preview of the uploaded file.
- * - After redeploying with this code, run once to fix existing rows:
- *   open the app and call   ?action=backfillopen   (or run
- *   backfillOpenLinks() in the editor).
+ * PDF FILES (Google Drive is the single CV storage):
+ * - Every uploaded CV PDF is physically saved to your linked Google Drive
+ *   folder (id: 1E4dpO5w8tlz8nLHPxCPzR35gkATixvFc) as its own unique file.
+ * - The sheet stores the Drive file id + a direct Drive view link in the
+ *   cvDriveId / cvDriveUrl / cvDrivePreview columns, and the cvDriveOpen
+ *   column holds a clickable "Open PDF" hyperlink. Clicking it opens the
+ *   full CV from Google Drive - never from script.google.com.
+ * - If the Drive upload fails, the record is NOT saved and an error is
+ *   returned so the user can retry (no base64 is written into the sheet).
+ * - The sheet is the recruitment CV database; Google Drive is the central
+ *   PDF storage.
+ * - After deploying, run the one-time migration for older rows whose PDFs
+ *   are still stored as base64 in the sheet (cvPdfData_1..N): open the app
+ *   and call   ?action=backfillopen   (or run backfillOpenLinks() in the
+ *   editor). It uploads those PDFs to Drive, writes the Drive links and
+ *   clears the raw base64 columns.
  * - Deleting a candidate also trashes its PDF from Drive (if any).
- * - If you RE-DEPLOY after editing, re-run setup() first so the
- *   new columns are added to the sheet.
- * - If CV upload to Drive fails with a scope error, the record is
- *   still saved with the PDF stored in the sheet, so nothing is
- *   lost. To also enable Drive uploads, re-deploy the web app
- *   (Manage deployments -> Edit -> New version -> Deploy) so the
- *   manifest scopes (script.external_request, drive.file) are
- *   re-authorized.
+ * - If you RE-DEPLOY after editing, re-run setup() first so the new columns
+ *   are added to the sheet.
+ * - If CV upload to Drive fails with a scope error, re-deploy the web app
+ *   (Manage deployments -> Edit -> New version -> Deploy) so the manifest
+ *   scopes (script.external_request, drive.file) are re-authorized.
  ***********************************************************/
 
 /* ==========================================================
@@ -332,7 +325,16 @@ function servePdfReview(id) {
   }
 }
 
-/** Fix the cvDriveOpen column for existing rows that stored their PDF as base64 in the sheet. */
+/**
+ * Migrate legacy rows: any candidate whose PDF is stored as base64 in the sheet
+ * (cvPdfData_1..N) but has no cvDriveId yet gets its PDF uploaded to the linked
+ * Google Drive folder. The Drive file id/url/preview columns and the clickable
+ * "Open PDF" hyperlink are written, and the raw base64 chunk columns are cleared
+ * (Drive becomes the single storage location).
+ *
+ * Run once after deploying: open the app and call ?action=backfillopen
+ * (or run backfillOpenLinks() in the editor).
+ */
 function backfillOpenLinks() {
   var sheet = getSheet();
   ensureHeaders(sheet);
@@ -340,30 +342,35 @@ function backfillOpenLinks() {
   var headers = values[0];
   var ci = {};
   for (var c = 0; c < headers.length; c++) ci[String(headers[c])] = c;
-  var base = ScriptApp.getService().getUrl();
-  var writes = [];
+  var uploaded = 0, failed = 0;
   for (var r = 1; r < values.length; r++) {
-    var hasB64 = false;
+    if (ci['cvDriveUrl'] !== undefined && values[r][ci['cvDriveUrl']]) continue; // already on Drive
+    var b64 = '';
+    var name = '';
     for (var cc = 0; cc < headers.length; cc++) {
-      if (String(headers[cc]).indexOf('cvPdfData_') === 0 && values[r][cc]) { hasB64 = true; break; }
+      var h = String(headers[cc]);
+      if (h === 'cvPdfName' && values[r][cc]) name = String(values[r][cc]);
+      if (h.indexOf('cvPdfData_') === 0 && values[r][cc]) b64 += String(values[r][cc]);
     }
-    var hasDrive = values[r][ci['cvDriveUrl']] ? true : false;
-    var formula;
-    if (hasDrive) {
-      formula = '=HYPERLINK("' + values[r][ci['cvDriveUrl']] + '","Open PDF")';
-    } else if (hasB64) {
-      formula = '=HYPERLINK("' + base + '?action=viewpdf&id=' + values[r][ci['id']] + '","Review PDF")';
-    } else {
-      formula = '';
+    if (!b64) continue; // no PDF to upload
+    var id = values[r][ci['id']];
+    try {
+      var fileId = uploadPdfViaApi(name || ('cv_' + id + '.pdf'), b64, 'application/pdf');
+      var url = 'https://drive.google.com/file/d/' + fileId + '/view';
+      var preview = 'https://drive.google.com/file/d/' + fileId + '/preview';
+      var row = r + 1;
+      if (ci['cvDriveId'] !== undefined) sheet.getRange(row, ci['cvDriveId'] + 1).setValue(fileId);
+      if (ci['cvDriveUrl'] !== undefined) sheet.getRange(row, ci['cvDriveUrl'] + 1).setValue(url);
+      if (ci['cvDrivePreview'] !== undefined) sheet.getRange(row, ci['cvDrivePreview'] + 1).setValue(preview);
+      if (ci['cvDriveOpen'] !== undefined) sheet.getRange(row, ci['cvDriveOpen'] + 1).setValue('=HYPERLINK("' + url + '","Open PDF")');
+      if (ci['cvPdfData_1'] !== undefined) sheet.getRange(row, ci['cvPdfData_1'] + 1, 1, PDF_CHUNKS).clearContent();
+      uploaded++;
+    } catch (err) {
+      failed++;
+      Logger.log('backfillOpenLinks row ' + (r + 1) + ' failed: ' + err);
     }
-    writes.push([r + 1, formula]);
   }
-  if (writes.length) {
-    var range = sheet.getRange(2, ci['cvDriveOpen'] + 1, writes.length, 1);
-    var out = writes.map(function (w) { return [w[1]]; });
-    range.setValues(out);
-  }
-  return 'fixed ' + writes.length + ' rows';
+  return 'uploaded ' + uploaded + ' PDFs to Drive, failed ' + failed;
 }
 
 /** POST requests: body = { action:'add'|'update'|'delete', data:{...} } */
@@ -378,21 +385,19 @@ function doPost(e) {
     ensureHeaders(sheet);
     if (action === 'add' || action === 'update') {
       data.id = Number(data.id);
-      var pdf = processPdf(data);
-      var cvError = '';
-      if (pdf && pdf.error) {
-        // Drive upload not possible -> store the PDF directly in the sheet
-        var chunks = splitPdfData(data.cvPdfData || '');
-        if (chunks.length <= PDF_CHUNKS) {
-          cvError = '';
-          Logger.log('Drive upload skipped for ' + data.id + ', PDF stored in sheet columns (' + chunks.length + ' chunks).');
-        } else {
-          cvError = 'PDF too large to store in the sheet. It stays in your browser storage only: ' + pdf.error;
-          delete data.cvPdfData;
+      // Google Drive is the single source of truth for CV PDFs. If a CV was
+      // uploaded, it MUST be stored in the linked Drive folder before the
+      // record is saved, so the sheet link always points to Drive (never to
+      // this script). On upload failure we abort the save and let the client
+      // surface the error and retry.
+      if (data.cvPdfData && data.cvPdfData !== '') {
+        var pdf = processPdf(data);
+        if (!pdf || pdf.error) {
+          return json({
+            ok: false,
+            error: 'CV upload to Google Drive failed, record NOT saved. ' + (pdf && pdf.error ? pdf.error : 'Missing CV data.')
+          });
         }
-        pdf = null;
-      }
-      if (pdf) {
         data.cvDriveId = pdf.id;
         data.cvDriveUrl = pdf.url;
         data.cvDrivePreview = pdf.preview;
@@ -403,7 +408,7 @@ function doPost(e) {
       } else {
         updateRecord(sheet, data);
       }
-      return json({ ok: true, id: data.id, cvError: cvError, cvDriveId: data.cvDriveId || '', cvDriveUrl: data.cvDriveUrl || '', cvDrivePreview: data.cvDrivePreview || '' });
+      return json({ ok: true, id: data.id, cvDriveId: data.cvDriveId || '', cvDriveUrl: data.cvDriveUrl || '', cvDrivePreview: data.cvDrivePreview || '' });
     }
     if (action === 'delete') {
       deleteRecord(sheet, data.id);
@@ -429,8 +434,7 @@ function processPdf(data) {
   if (data.cvDriveId && data.cvDriveId !== '') return null;
   if (!data.cvPdfData || data.cvPdfData === '') return null;
   try {
-    var name = data.cvPdfName || ('cv_' + data.id + '.pdf');
-    if (!/\.pdf$/i.test(name)) name = name + '.pdf';
+    var name = buildDriveFileName(data);
     var fileId = uploadPdfViaApi(name, data.cvPdfData, 'application/pdf');
     return {
       id: fileId,
@@ -441,6 +445,24 @@ function processPdf(data) {
     Logger.log('processPdf error: ' + err);
     return { error: String(err) };
   }
+}
+
+/**
+ * Build a unique, HR-friendly file name for the uploaded CV, e.g.
+ * "CV_JohnDoe_20240813_175832.pdf". Falls back to the original file name
+ * (sanitized) or "cv_<id>.pdf".
+ */
+function buildDriveFileName(data) {
+  var orig = String(data.cvPdfName || '');
+  var safeOrig = orig.replace(/[^\w.\-\u4e00-\u9fff\u3040-\u30ff\uAC00-\uD7AF ]/g, '_').replace(/\s+/g, '_').slice(0, 80);
+  var name = String(data.name || '');
+  var safeName = name.replace(/[^\w\-\u4e00-\u9fff\u3040-\u30ff\uAC00-\uD7AF ]/g, '_').replace(/\s+/g, '_').slice(0, 50);
+  var out = '';
+  if (safeName) out = 'CV_' + safeName + '_' + data.id;
+  else if (safeOrig) out = 'CV_' + safeOrig;
+  else out = 'cv_' + data.id;
+  if (!/\.pdf$/i.test(out)) out = out + '.pdf';
+  return out;
 }
 
 /** Upload bytes (base64 string) to Drive via the REST API files.create (works with drive.file scope). */
@@ -517,8 +539,6 @@ function serializeRow(data) {
       if (h === 'cvDriveOpen') {
         if (data.cvDriveUrl && data.cvDriveUrl !== '') {
           v = '=HYPERLINK("' + data.cvDriveUrl + '","Open PDF")';
-        } else if (data.cvPdfData && data.cvPdfData !== '') {
-          v = '=HYPERLINK("' + ScriptApp.getService().getUrl() + '?action=viewpdf&id=' + data.id + '","Review PDF")';
         } else {
           v = '';
         }

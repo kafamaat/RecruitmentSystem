@@ -950,6 +950,10 @@
                             <i class="fas fa-file-excel me-2"></i>Sync Google Sheets
                         </button>
 
+                        <button onclick="fixDriveLinks()" class="btn w-100 mb-2" style="background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); color: var(--text);">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Fix CV Links to Drive
+                        </button>
+
                         <button onclick="resetAllData()" class="btn w-100 mb-2" style="background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); color: var(--text);">
                             <i class="fas fa-trash-can me-2"></i>Reset All Data
                         </button>
@@ -2321,7 +2325,13 @@ function handleModalSubmit(e) {
   };
   if (id) {
     const idx = candidates.findIndex(c => c.id==id);
-    if (idx>=0) { Object.assign(candidates[idx], data); addAuditLog('Edit Candidate','Edited '+data.name); showToast('Candidate updated!','success'); }
+    if (idx>=0) {
+      const cvFileInput = document.getElementById('modal-cv-pdf');
+      const newCvChosen = cvFileInput && cvFileInput.files && cvFileInput.files.length > 0;
+      if (newCvChosen) {
+        data.cvDriveId=''; data.cvDriveUrl=''; data.cvDrivePreview='';
+      }
+      Object.assign(candidates[idx], data); addAuditLog('Edit Candidate','Edited '+data.name); showToast('Candidate updated!','success'); }
   } else {
     data.id=Date.now(); data.createdAt=new Date().toISOString(); data.interviewHistory=[];
     candidates.unshift(data);
@@ -2400,8 +2410,16 @@ function loadRecords() {
     const hx = c.interviewHistory || [];
     const roundsCount = hx.length;
     const roundsLabel = roundsCount ? '<span class="badge bg-dark" title="'+roundsCount+' completed round(s)">'+roundsCount+'</span>' : '<span class="text-muted">0</span>';
+    let cvCell = '';
+    if (c.cvDriveUrl) {
+      cvCell = '<a class="btn btn-sm btn-outline-success" href="'+esc(c.cvDriveUrl)+'" target="_blank" title="Open CV on Google Drive"><i class="fas fa-file-pdf"></i> Open PDF</a>';
+    } else if (c.cvPdfData) {
+      cvCell = '<button class="btn btn-sm btn-outline-danger" onclick="previewPDF('+c.id+')" title="Preview PDF (not yet on Drive)"><i class="fas fa-file-pdf"></i> Preview</button>';
+    } else {
+      cvCell = '<span class="text-muted">--</span>';
+    }
     html += '<tr><td>'+(i+1)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.position)+'</td><td>'+esc(c.department)+'</td><td>'+(c.interviewDate||'')+'</td><td>'+(c.interviewTime||'')+'</td><td>'+esc(c.stage)+'</td><td class="text-center">'+roundsLabel+'</td><td>'+(c.cvLink?'<a href="'+esc(c.cvLink)+'" target="_blank"><i class="fas fa-external-link-alt"></i></a>':'')+'</td>';
-    html += '<td class="text-center">'+(c.cvPdfData?'<button class="btn btn-sm btn-outline-danger" onclick="previewPDF('+c.id+')" title="Preview PDF"><i class="fas fa-file-pdf"></i></button>':'<span class="text-muted">--</span>')+(c.cvDriveUrl?' <a class="btn btn-sm btn-outline-success" href="'+esc(c.cvDriveUrl)+'" target="_blank" title="View on Drive"><i class="fas fa-cloud"></i></a>':'')+'</td>';
+    html += '<td class="text-center">'+cvCell+'</td>';
     html += '<td><div class="btn-group btn-group-sm"><button class="btn btn-outline-primary" onclick="editCandidate('+c.id+')" title="Edit"><i class="fas fa-edit"></i></button><button class="btn btn-outline-info" onclick="showInterviewDetails('+c.id+')" title="View History"><i class="fas fa-history"></i></button><button class="btn btn-outline-danger" onclick="deleteCandidate('+c.id+')" title="Delete"><i class="fas fa-trash"></i></button></div></td></tr>';
   });
   document.querySelector('#records-table tbody').innerHTML = html||'<tr><td colspan="11" class="text-center text-muted">No records found</td></tr>';
@@ -3333,12 +3351,13 @@ const _TELEGRAM_CHAT_ID = '-1003827965720';
 
 // ============= GOOGLE SHEETS DATABASE (Apps Script Web App) =============
 // Replace with the Web App URL from: Google Sheet > Extensions > Apps Script > Deploy > New deployment > Web app
-const _GSHEET_URL = 'https://script.google.com/macros/s/AKfycbz3S7rbgyf7pDSQsaZEqwkwvLlnWQpdeaEBtpSTuQ8vB-FUvtm7q5a9yQGMZ4bJZhyf0g/exec';
+const _GSHEET_URL = 'https://script.google.com/macros/s/AKfycbwFC4633tx-yLhAKvu2qyaxaDinq1JLWL_nGXgmU9Rhv7r4my_u9wDnANw0kECrG9abOw/exec';
 
 let _gsheetEnabled = false;
 let _gsheetKnownIds = new Set();
 let _gsheetSyncTimer = null;
 let _gsheetPulling = false;
+let _driveFixRunning = false;
 
 function isGsheetConfigured() {
   return _GSHEET_URL && _GSHEET_URL.indexOf('YOUR_APPS_SCRIPT') === -1;
@@ -3390,6 +3409,7 @@ async function loadFromGsheet() {
       const existing = {};
       candidates.forEach(function(c) { existing[Number(c.id)] = c; });
       candidates.length = 0;
+      let needsDriveFix = false;
       rows.forEach(function(r) {
         if (!r.interviewHistory) r.interviewHistory = [];
         if (r.id) r.id = Number(r.id);
@@ -3398,11 +3418,17 @@ async function loadFromGsheet() {
           if (!r.cvPdfData && old.cvPdfData) { r.cvPdfData = old.cvPdfData; r.cvPdfName = old.cvPdfName; }
           if (!r.remarks && old.remarks) r.remarks = old.remarks;
         }
+        if (r.cvPdfData && !r.cvDriveUrl) needsDriveFix = true;
         candidates.push(r);
       });
       saveLocal();
       _gsheetKnownIds = new Set(candidates.map(function(c) { return Number(c.id); }));
       showToast('Loaded ' + rows.length + ' records from Google Sheets', 'success');
+      if (needsDriveFix && !_driveFixRunning) {
+        _driveFixRunning = true;
+        showToast('Found legacy CVs - migrating them to Google Drive...', 'info');
+        fixDriveLinks().then(function() { _driveFixRunning = false; });
+      }
     } else {
       _gsheetKnownIds = new Set();
       console.log('Google Sheets is empty. First save from the system will create records.');
@@ -3432,20 +3458,18 @@ function syncAllToGsheet() {
         }
         const resp = await gsheetRequest(action, send);
         if (resp && resp.ok) {
-          if (resp.cvError) {
-            console.warn('Google Sheets:', resp.cvError);
-            showToast('Saved, but CV upload to Drive needs fixing: ' + resp.cvError.slice(0, 120), 'warning');
-          }
           if (resp.cvDriveId) {
             c.cvDriveId = resp.cvDriveId;
             c.cvDriveUrl = resp.cvDriveUrl;
             c.cvDrivePreview = resp.cvDrivePreview;
             saveLocal();
           }
+          _gsheetKnownIds.add(id);
         } else {
           console.warn('Google Sheets sync failed for record', id, resp);
+          const msg = (resp && resp.error) ? String(resp.error).slice(0, 160) : 'Google Sheets sync failed (check console)';
+          showToast('Not saved to Drive/Sheet: ' + msg, 'danger');
         }
-        _gsheetKnownIds.add(id);
       }
       const toDelete = [];
       _gsheetKnownIds.forEach(function(id) {
@@ -3472,6 +3496,27 @@ async function syncGsheetNow() {
   await loadFromGsheet();
   syncAllToGsheet();
   showToast('Google Sheets sync triggered.', 'success');
+}
+
+async function fixDriveLinks() {
+  if (!isGsheetConfigured()) {
+    showToast('Google Sheets not configured.', 'warning');
+    return;
+  }
+  showToast('Migrating CVs to Google Drive...', 'info');
+  try {
+    const res = await fetch(_GSHEET_URL + '?action=backfillopen', { method: 'GET' });
+    const data = await res.json();
+    const msg = (data && data.ok && data.result) ? data.result : ('Migration failed: ' + (data && data.error));
+    showToast('CV Drive migration: ' + msg, data && data.ok ? 'success' : 'danger');
+    if (data && data.ok) {
+      await loadFromGsheet();
+      loadRecords();
+    }
+  } catch (e) {
+    console.error('fixDriveLinks error:', e);
+    showToast('CV Drive migration error: ' + e.message, 'danger');
+  }
 }
 
 let _firebaseApp = null, _firestore = null, _cloudDbEnabled = false, _firebaseUnsubscribe = null, _firebaseSyncing = false, _firebaseDebounceTimer = null, _syncInterval = null, _pulling = false;
